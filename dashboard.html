@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard — Studio Kamu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">Studio Kamu<span style="color:var(--accent)">.</span></div>
+
+      <nav class="sidebar-nav">
+        <a class="sidebar-link active" href="dashboard.html"><span class="ic">🏠</span> Dashboard</a>
+        <a class="sidebar-link" href="prompt.html"><span class="ic">📋</span> Prompt Library</a>
+        <a class="sidebar-link" href="#produk-saya"><span class="ic">📦</span> Produk Saya</a>
+        <a class="sidebar-link" href="#update"><span class="ic">🚀</span> Update</a>
+        <a class="sidebar-link" id="adminLink" href="admin.html" style="display:none;"><span class="ic">⚙️</span> Admin Panel</a>
+      </nav>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-user">
+        <div class="avatar" id="userAvatar">?</div>
+        <div style="overflow:hidden;">
+          <div class="sidebar-user-name" id="userName">Memuat...</div>
+          <div class="sidebar-user-role" id="userRole"></div>
+        </div>
+        <button class="logout-btn" onclick="logout()" title="Keluar">⎋</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <h1 class="greeting">👋 Halo, <span id="greetingNama">...</span></h1>
+      <p class="greeting-sub">Senang lihat kamu lagi. Ini progress belajar kamu sejauh ini.</p>
+
+      <div class="section-title" id="produk-saya">📦 Produk Anda</div>
+      <div class="produk-owned-grid" id="produkGrid">
+        <div class="empty-state" style="grid-column:1/-1;">Memuat data produk...</div>
+      </div>
+
+      <div id="continueLearningArea"></div>
+
+      <div class="section-title" id="update">🚀 Update Terbaru</div>
+      <div class="continue-card" id="updateArea">
+        <p style="font-size:13px;margin:0;">Memuat update...</p>
+      </div>
+
+      <div class="section-title">🎁 Bonus &amp; Bantuan</div>
+      <div class="info-grid">
+        <div class="info-card">
+          <h3>🎁 Bonus Eksklusif</h3>
+          <p>Cek koleksi template &amp; prompt bonus yang tersedia untuk member.</p>
+          <a href="prompt.html" class="btn btn-primary btn-sm">Lihat Bonus</a>
+        </div>
+        <div class="info-card" style="background:var(--bg);border:1px solid var(--border);">
+          <h3>❓ Butuh Bantuan?</h3>
+          <p>Ada kendala akses atau pertanyaan seputar materi? Hubungi kami langsung.</p>
+          <a href="mailto:admin@email.com" class="btn btn-outline btn-sm">Hubungi Admin</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="assets/api.js"></script>
+  <script>
+    if (requireAuth()) {
+      const session = getSession();
+      if (session) {
+        document.getElementById('greetingNama').textContent = session.nama;
+        document.getElementById('userName').textContent = session.nama;
+        document.getElementById('userRole').textContent = session.role === 'admin' ? 'Admin' : 'Member';
+        document.getElementById('userAvatar').textContent = session.nama.charAt(0).toUpperCase();
+        if (session.role === 'admin') {
+          document.getElementById('adminLink').style.display = 'flex';
+        }
+      }
+      loadDashboard();
+    }
+
+    async function loadDashboard() {
+      try {
+        const res = await apiGet('getDashboard', {});
+        if (!res.success) {
+          if (res.message && res.message.indexOf('kadaluarsa') !== -1) {
+            clearToken();
+            window.location.href = 'login.html';
+            return;
+          }
+          showToast('Gagal memuat dashboard: ' + res.message);
+          return;
+        }
+        renderProduk(res.data.myProducts || []);
+        renderContinueLearning(res.data.continueLearning);
+        renderUpdates(res.data.updates || []);
+      } catch (err) {
+        showToast('Gagal terhubung ke server: ' + err.message);
+      }
+    }
+
+    function renderProduk(list) {
+      const grid = document.getElementById('produkGrid');
+      if (list.length === 0) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">' +
+          'Kamu belum memiliki produk apa pun.<br>' +
+          '<small>Kalau kamu sudah membeli, pastikan proses "Buat Akun" dengan kode akses sudah benar.</small></div>';
+        return;
+      }
+      grid.innerHTML = list.map(function (p) {
+        return (
+          '<a href="produk.html?id=' + p.id + '" class="produk-owned-card">' +
+          '<div class="produk-owned-top">' +
+          '<div class="produk-owned-nama">' + p.nama + '</div>' +
+          (p.expired ? '<span class="badge-expired">Kedaluwarsa</span>' : '') +
+          '</div>' +
+          '<div class="progress-bar-track"><div class="progress-bar-fill" style="width:' + p.progressPercent + '%;"></div></div>' +
+          '<div class="progress-label"><span>Progress ' + p.progressPercent + '%</span><span>' + p.selesaiKonten + '/' + p.totalKonten + ' selesai</span></div>' +
+          '</a>'
+        );
+      }).join('');
+    }
+
+    function renderContinueLearning(cl) {
+      const area = document.getElementById('continueLearningArea');
+      if (!cl) { area.innerHTML = ''; return; }
+
+      const iconFor = function (tipe) {
+        return tipe === 'video' ? '▶️' : (tipe === 'pdf' ? '📄' : (tipe === 'prompt' ? '📋' : '📥'));
+      };
+
+      area.innerHTML =
+        '<div class="section-title">📖 Lanjutkan Belajar</div>' +
+        '<div class="continue-card">' +
+        '<div class="continue-modul-nama">' + cl.produkNama + '</div>' +
+        '<div class="continue-produk-nama">' + cl.modulNama + '</div>' +
+        cl.kontenList.map(function (k) {
+          const href = k.tipe === 'video' ? ('video.html?id=' + k.id) : ('produk.html?id=' + cl.produkId);
+          return '<a class="konten-row" href="' + href + '" style="display:flex;">' +
+            '<span class="ic">' + iconFor(k.tipe) + '</span>' + k.judul + '</a>';
+        }).join('') +
+        '</div>';
+    }
+
+    function renderUpdates(updates) {
+      const area = document.getElementById('updateArea');
+      if (updates.length === 0) {
+        area.innerHTML = '<p style="font-size:13px;margin:0;">Belum ada update terbaru.</p>';
+        return;
+      }
+      area.innerHTML = updates.map(function (u) {
+        return '<div class="update-item"><div class="update-judul">' + u.judul + '</div>' +
+          '<p style="font-size:13px;margin:2px 0;">' + u.isi + '</p>' +
+          '<div class="update-tanggal">' + u.tanggal + '</div></div>';
+      }).join('');
+    }
+  </script>
+</body>
+</html>
