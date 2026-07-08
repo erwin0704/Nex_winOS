@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Member Area — Studio Kamu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="container navbar-inner">
+      <div class="brand">Studio Kamu<span style="color:var(--accent)">.</span></div>
+      <div class="nav-links">
+        <a href="#produk">Produk</a>
+        <a href="#alur">Cara Kerja</a>
+        <a href="#faq">FAQ</a>
+        <a href="login.html" class="btn btn-outline btn-sm">Masuk Akun</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow">● Member Area Produk Digital</span>
+        <h1>Satu akun,<br>semua produk digital kamu.</h1>
+        <p class="hero-lede">
+          Dokumen, gambar, video, prompt, dan template — semua tersimpan rapi
+          di satu tempat. Beli sekali di Lynk.id, akses selamanya di sini.
+        </p>
+        <div class="hero-cta-row">
+          <a href="#produk" class="btn btn-primary">Lihat Semua Produk</a>
+          <a href="login.html" class="btn btn-outline">Sudah Punya Akun?</a>
+        </div>
+      </div>
+
+      <div class="file-stack" aria-hidden="true">
+        <div class="file-card c1">
+          <span class="chip doc">DOC</span>
+          <div class="file-title">Panduan Lengkap.pdf</div>
+          <div class="file-meta">12 halaman · siap pakai</div>
+        </div>
+        <div class="file-card c2">
+          <span class="chip vid">MP4</span>
+          <div class="file-title">Modul Video 01</div>
+          <div class="file-meta">08:42 menit</div>
+        </div>
+        <div class="file-card c3">
+          <span class="chip img">PNG</span>
+          <div class="file-title">Template Desain</div>
+          <div class="file-meta">Editable · HD</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ PRODUK ============ -->
+  <section id="produk">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Produk</span>
+        <h2>Apa saja yang bisa kamu akses</h2>
+        <p>Setiap paket berisi kombinasi video, dokumen, prompt, dan template — sesuai kebutuhanmu.</p>
+      </div>
+
+      <div class="produk-grid" id="produkGrid">
+        <div class="produk-empty">Memuat daftar produk...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ALUR PEMBELIAN ============ -->
+  <section id="alur" style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Cara Kerja</span>
+        <h2>Dari beli sampai akses, cuma 3 langkah</h2>
+      </div>
+      <div class="alur-grid">
+        <div class="alur-item">
+          <div class="alur-num">01</div>
+          <h3>Pesan paket di Lynk.id</h3>
+          <p>Pilih paket yang sesuai kebutuhanmu dan selesaikan pembayaran di Lynk.id.</p>
+        </div>
+        <div class="alur-item">
+          <div class="alur-num">02</div>
+          <h3>Terima kode akses</h3>
+          <p>Kamu akan menerima kode akses unik lewat email untuk membuat akun di website ini.</p>
+        </div>
+        <div class="alur-item">
+          <div class="alur-num">03</div>
+          <h3>Buat akun & mulai akses</h3>
+          <p>Masukkan kode akses saat mendaftar, dan produkmu langsung terbuka di dashboard.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section id="faq">
+    <div class="container" style="max-width:760px;">
+      <div class="section-head">
+        <span class="eyebrow">FAQ</span>
+        <h2>Pertanyaan yang sering ditanyakan</h2>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Bagaimana cara mendapatkan akses setelah membeli?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Setelah pembayaran di Lynk.id berhasil, kamu akan menerima email berisi kode akses unik. Gunakan kode ini saat membuat akun di halaman "Masuk Akun".</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Apakah akses berlaku selamanya?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Tergantung paket yang kamu beli. Detail masa akses tertera pada masing-masing produk.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Bisakah 1 kode akses dipakai lebih dari 1 orang?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Tidak. Setiap kode akses hanya bisa digunakan satu kali untuk menjaga keamanan konten.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Bagaimana jika saya lupa password?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Gunakan opsi "Lupa Password" di halaman login. Link reset akan dikirim ke email terdaftar.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA AKHIR ============ -->
+  <section>
+    <div class="container">
+      <div class="cta-final">
+        <h2>Siap mulai belajar?</h2>
+        <p>Pilih paket yang sesuai dan dapatkan akses ke seluruh materi.</p>
+        <a href="#produk" class="btn btn-primary" style="margin-top:12px;">Lihat Semua Produk</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+      <span>© <span id="thisYear"></span> Studio Kamu. Semua hak dilindungi.</span>
+      <a href="login.html">Masuk Akun</a>
+    </div>
+  </footer>
+
+  <script src="assets/api.js"></script>
+  <script>
+    document.getElementById('thisYear').textContent = new Date().getFullYear();
+
+    // Ambil daftar produk dari API (publik, tidak butuh login)
+    async function loadProdukList() {
+      try {
+        const res = await apiGet('getPublicProdukList', {});
+        const grid = document.getElementById('produkGrid');
+
+        if (!res.success || !res.data || res.data.length === 0) {
+          grid.innerHTML = '<div class="produk-empty">Belum ada produk yang ditambahkan.<br><small>Tambahkan produk lewat Admin Panel.</small></div>';
+          return;
+        }
+
+        grid.innerHTML = res.data.map(function (p) {
+          const thumb = p.thumbnail
+            ? '<img src="' + p.thumbnail + '" alt="' + p.nama + '">'
+            : (p.kategori || 'PRODUK');
+          return (
+            '<div class="produk-card">' +
+            '<div class="produk-thumb">' + thumb + '</div>' +
+            '<div class="produk-nama">' + p.nama + '</div>' +
+            '<p class="produk-desc">' + (p.deskripsi || '') + '</p>' +
+            '<a href="login.html" class="btn btn-outline btn-sm btn-block">Lihat Detail</a>' +
+            '</div>'
+          );
+        }).join('');
+      } catch (err) {
+        document.getElementById('produkGrid').innerHTML =
+          '<div class="produk-empty">Gagal memuat produk. Coba muat ulang halaman.</div>';
+      }
+    }
+
+    loadProdukList();
+  </script>
+</body>
+</html>
