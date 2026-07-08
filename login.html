@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Masuk / Buat Akun — Studio Kamu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <div style="width:100%;max-width:420px;">
+      <a href="index.html" class="auth-back">← Kembali ke Beranda</a>
+
+      <div class="auth-card">
+
+        <!-- ============ VIEW: LOGIN & DAFTAR ============ -->
+        <div id="viewAuth" class="view active">
+          <div class="auth-tabs">
+            <div class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Masuk</div>
+            <div class="auth-tab" id="tabDaftar" onclick="switchTab('daftar')">Buat Akun</div>
+          </div>
+
+          <div id="formMsgAuth" class="form-msg"></div>
+
+          <form id="formLogin" onsubmit="return handleLogin(event)">
+            <div class="field">
+              <label for="loginEmail">Email</label>
+              <input type="email" id="loginEmail" required autocomplete="email" placeholder="nama@email.com">
+            </div>
+            <div class="field">
+              <label for="loginPassword">Password</label>
+              <div class="password-field">
+                <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="••••••••">
+                <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Tampilkan password">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+            <div class="forgot-trigger">
+              <button type="button" class="link-btn" onclick="switchTab('lupa')">Lupa password?</button>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="btnLogin">Masuk</button>
+          </form>
+
+          <form id="formDaftar" onsubmit="return handleDaftar(event)" style="display:none;">
+            <div class="field">
+              <label for="daftarNama">Nama Lengkap</label>
+              <input type="text" id="daftarNama" required autocomplete="name" placeholder="Nama kamu">
+            </div>
+            <div class="field">
+              <label for="daftarEmail">Email</label>
+              <input type="email" id="daftarEmail" required autocomplete="email" placeholder="Gunakan email saat beli di Lynk.id">
+            </div>
+            <div class="field">
+              <label for="daftarPassword">Buat Password</label>
+              <div class="password-field">
+                <input type="password" id="daftarPassword" required autocomplete="new-password" placeholder="Minimal 6 karakter">
+                <button type="button" class="password-toggle" onclick="togglePassword('daftarPassword', this)" aria-label="Tampilkan password">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="daftarKode">Kode Akses</label>
+              <input type="text" id="daftarKode" required placeholder="Contoh: KODE-2026-A1B2C3" style="text-transform:uppercase;">
+              <div class="field-hint">Kode ini dikirim ke email kamu setelah pembelian di Lynk.id selesai.</div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="btnDaftar">Buat Akun</button>
+          </form>
+
+          <div class="auth-foot" id="footLogin">
+            Belum punya akun? <button type="button" class="link-btn" onclick="switchTab('daftar')">Buat akun</button>
+          </div>
+          <div class="auth-foot" id="footDaftar" style="display:none;">
+            Sudah punya akun? <button type="button" class="link-btn" onclick="switchTab('login')">Masuk</button>
+          </div>
+        </div>
+
+        <!-- ============ VIEW: LUPA PASSWORD ============ -->
+        <div id="viewLupa" class="view">
+          <h3 style="margin-bottom:6px;">Lupa Password</h3>
+          <p style="font-size:14px;margin-bottom:20px;">Masukkan email akun kamu. Kami akan mengirim link untuk membuat password baru.</p>
+          <div id="formMsgLupa" class="form-msg"></div>
+          <form id="formLupa" onsubmit="return handleLupaPassword(event)">
+            <div class="field">
+              <label for="lupaEmail">Email</label>
+              <input type="email" id="lupaEmail" required placeholder="nama@email.com">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="btnLupa">Kirim Link Reset</button>
+          </form>
+          <div class="auth-foot">
+            <button type="button" class="link-btn" onclick="switchTab('login')">← Kembali ke halaman masuk</button>
+          </div>
+        </div>
+
+        <!-- ============ VIEW: SET PASSWORD BARU ============ -->
+        <div id="viewReset" class="view">
+          <h3 style="margin-bottom:6px;">Buat Password Baru</h3>
+          <p style="font-size:14px;margin-bottom:20px;">Masukkan password baru untuk akun kamu.</p>
+          <div id="formMsgReset" class="form-msg"></div>
+          <form id="formReset" onsubmit="return handleResetPassword(event)">
+            <div class="field">
+              <label for="resetPasswordBaru">Password Baru</label>
+              <div class="password-field">
+                <input type="password" id="resetPasswordBaru" required placeholder="Minimal 6 karakter">
+                <button type="button" class="password-toggle" onclick="togglePassword('resetPasswordBaru', this)" aria-label="Tampilkan password">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="btnReset">Simpan Password Baru</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/api.js"></script>
+  <script>
+    // Kalau ada ?reset=xxx di URL (dari link email), langsung tampilkan form set password baru
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetToken = urlParams.get('reset');
+    if (resetToken) switchTab('reset');
+
+    // Kalau sudah login, langsung ke dashboard (tidak perlu login ulang)
+    if (getToken() && !resetToken) {
+      window.location.href = 'dashboard.html';
+    }
+
+    function switchTab(tab) {
+      document.getElementById('viewAuth').classList.remove('active');
+      document.getElementById('viewLupa').classList.remove('active');
+      document.getElementById('viewReset').classList.remove('active');
+
+      if (tab === 'lupa') { document.getElementById('viewLupa').classList.add('active'); return; }
+      if (tab === 'reset') { document.getElementById('viewReset').classList.add('active'); return; }
+
+      document.getElementById('viewAuth').classList.add('active');
+      const isLogin = tab === 'login';
+      document.getElementById('tabLogin').classList.toggle('active', isLogin);
+      document.getElementById('tabDaftar').classList.toggle('active', !isLogin);
+      document.getElementById('formLogin').style.display = isLogin ? 'block' : 'none';
+      document.getElementById('formDaftar').style.display = isLogin ? 'none' : 'block';
+      document.getElementById('footLogin').style.display = isLogin ? 'block' : 'none';
+      document.getElementById('footDaftar').style.display = isLogin ? 'none' : 'block';
+      hideFormMessage('formMsgAuth');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnLogin');
+      hideFormMessage('formMsgAuth');
+      setButtonLoading(btn, true, 'Memeriksa...');
+      showLoading('Memeriksa akun kamu...');
+
+      try {
+        const res = await apiPost('login', {
+          email: document.getElementById('loginEmail').value,
+          password: document.getElementById('loginPassword').value
+        });
+        setButtonLoading(btn, false);
+
+        if (res.success) {
+          setToken(res.token);
+          setSession({ nama: res.nama, role: res.role });
+          showLoading('Berhasil! Mengarahkan ke dashboard...');
+          window.location.href = 'dashboard.html';
+        } else {
+          hideLoading();
+          showFormMessage('formMsgAuth', res.message, 'error');
+        }
+      } catch (err) {
+        setButtonLoading(btn, false);
+        hideLoading();
+        showFormMessage('formMsgAuth', 'Gagal terhubung ke server: ' + err.message, 'error');
+      }
+      return false;
+    }
+
+    async function handleDaftar(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnDaftar');
+      hideFormMessage('formMsgAuth');
+      setButtonLoading(btn, true, 'Membuat akun...');
+      showLoading('Membuat akun kamu...');
+
+      try {
+        const res = await apiPost('register', {
+          nama: document.getElementById('daftarNama').value,
+          email: document.getElementById('daftarEmail').value,
+          password: document.getElementById('daftarPassword').value,
+          kodeAkses: document.getElementById('daftarKode').value
+        });
+        setButtonLoading(btn, false);
+        hideLoading();
+
+        if (res.success) {
+          showFormMessage('formMsgAuth', res.message + ' Silakan masuk.', 'success');
+          document.getElementById('formDaftar').reset();
+          setTimeout(function () { switchTab('login'); }, 1200);
+        } else {
+          showFormMessage('formMsgAuth', res.message, 'error');
+        }
+      } catch (err) {
+        setButtonLoading(btn, false);
+        hideLoading();
+        showFormMessage('formMsgAuth', 'Gagal terhubung ke server: ' + err.message, 'error');
+      }
+      return false;
+    }
+
+    async function handleLupaPassword(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnLupa');
+      hideFormMessage('formMsgLupa');
+      setButtonLoading(btn, true, 'Mengirim...');
+      showLoading('Mengirim link reset...');
+
+      try {
+        const res = await apiPost('requestPasswordReset', { email: document.getElementById('lupaEmail').value });
+        setButtonLoading(btn, false);
+        hideLoading();
+        showFormMessage('formMsgLupa', res.message, 'success');
+        document.getElementById('formLupa').reset();
+      } catch (err) {
+        setButtonLoading(btn, false);
+        hideLoading();
+        showFormMessage('formMsgLupa', 'Gagal terhubung ke server: ' + err.message, 'error');
+      }
+      return false;
+    }
+
+    async function handleResetPassword(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnReset');
+      hideFormMessage('formMsgReset');
+      setButtonLoading(btn, true, 'Menyimpan...');
+      showLoading('Menyimpan password baru...');
+
+      try {
+        const res = await apiPost('resetPassword', {
+          resetToken: resetToken,
+          newPassword: document.getElementById('resetPasswordBaru').value
+        });
+        setButtonLoading(btn, false);
+
+        if (res.success) {
+          showFormMessage('formMsgReset', res.message, 'success');
+          setTimeout(function () { window.location.href = 'login.html'; }, 1500);
+        } else {
+          hideLoading();
+          showFormMessage('formMsgReset', res.message, 'error');
+        }
+      } catch (err) {
+        setButtonLoading(btn, false);
+        hideLoading();
+        showFormMessage('formMsgReset', 'Gagal terhubung ke server: ' + err.message, 'error');
+      }
+      return false;
+    }
+
+    const EYE_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    const EYE_CLOSED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.6 20.6 0 0 1 5.06-6.06M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a20.6 20.6 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+
+    function togglePassword(inputId, btnEl) {
+      const input = document.getElementById(inputId);
+      const isHidden = input.type === 'password';
+      input.type = isHidden ? 'text' : 'password';
+      btnEl.innerHTML = isHidden ? EYE_CLOSED : EYE_OPEN;
+    }
+  </script>
+</body>
+</html>
