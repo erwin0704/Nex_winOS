@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Detail Produk — Studio Kamu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css">
   <style>
-    .main { max-width: 820px; margin: 0 auto; padding: 32px 24px 60px; }
+    .content-inner { max-width: 780px; }
     .back-link { font-size: 13px; color: var(--ink-soft); margin-bottom: 20px; display: inline-flex; align-items: center; gap: 6px; }
     .back-link:hover { color: var(--accent); }
 
@@ -39,17 +39,23 @@
     .check-btn.checked { background: var(--success); border-color: var(--success); color: #fff; }
   </style>
 </head>
-<body>
-  <main class="main">
-    <a href="dashboard.html" class="back-link">← Kembali ke Dashboard</a>
-    <div id="content">
-      <div class="empty-state">Memuat data produk...</div>
-    </div>
-  </main>
+<body class="app-page">
+  <div class="app-shell">
+    <div id="sidebarMount"></div>
+    <main class="main">
+      <div class="content-inner">
+        <a href="dashboard.html" class="back-link">← Kembali ke Dashboard</a>
+        <div id="content">
+          <div class="empty-state">Memuat data produk...</div>
+        </div>
+      </div>
+    </main>
+  </div>
 
   <script src="assets/api.js"></script>
   <script>
     if (requireAuth()) {
+      mountSidebar('produk');
       const params = new URLSearchParams(window.location.search);
       const produkId = params.get('id');
       loadProduk(produkId);
