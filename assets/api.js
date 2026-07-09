@@ -7,7 +7,7 @@
  * ==========================================================
  */
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbyngtoFKpA8-tMkXbXEXlBWmF3tJruQ4WGRu_uL6NG6n87pNP-pN1bOibJtoD_KVoiu/exec';
+const API_URL = 'GANTI_DENGAN_URL_EXEC_APPS_SCRIPT_KAMU';
 
 /* ============================================================
    KOMUNIKASI KE API
@@ -215,3 +215,106 @@ document.addEventListener('DOMContentLoaded', function () {
   ensureLoadingOverlay();
   ensureToast();
 });
+
+/* ============================================================
+   IKON SVG (pengganti emoji - dipakai di sidebar, dsb)
+   ============================================================ */
+
+const ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"></path></svg>',
+  box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>',
+  list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.42.68.7 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>',
+  logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg>',
+  chevronLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>'
+};
+
+/* ============================================================
+   SIDEBAR (dipakai bersama di dashboard/produk/video/prompt/admin)
+   ============================================================ */
+
+/**
+ * Render & pasang sidebar ke dalam elemen dengan id="sidebarMount".
+ * @param {String} activeKey - salah satu: 'dashboard', 'prompt', 'admin'
+ */
+function mountSidebar(activeKey) {
+  const mountEl = document.getElementById('sidebarMount');
+  if (!mountEl) return;
+
+  const session = getSession() || {};
+  const isAdmin = session.role === 'admin';
+  const collapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+
+  const items = [
+    { key: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'home' },
+    { key: 'produk', label: 'Produk Saya', href: 'dashboard.html#produk-saya', icon: 'box' },
+    { key: 'prompt', label: 'Prompt Library', href: 'prompt.html', icon: 'list' },
+    { key: 'update', label: 'Update', href: 'dashboard.html#update', icon: 'bell' }
+  ];
+  if (isAdmin) items.push({ key: 'admin', label: 'Admin Panel', href: 'admin.html', icon: 'settings' });
+
+  const navHtml = items.map(function (it) {
+    return '<a class="sidebar-link ' + (it.key === activeKey ? 'active' : '') + '" href="' + it.href + '">' +
+      '<span class="ic">' + ICONS[it.icon] + '</span>' +
+      '<span class="label">' + it.label + '</span>' +
+      '</a>';
+  }).join('');
+
+  mountEl.outerHTML =
+    '<aside class="sidebar ' + (collapsed ? 'collapsed' : '') + '" id="mainSidebar">' +
+    '<div class="sidebar-top">' +
+    '<div class="sidebar-brand">Studio Kamu<span style="color:var(--accent)">.</span></div>' +
+    '<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Sembunyikan/tampilkan menu">' + ICONS.chevronLeft + '</button>' +
+    '</div>' +
+    '<nav class="sidebar-nav">' + navHtml + '</nav>' +
+    '<div class="sidebar-divider"></div>' +
+    '<div class="sidebar-user">' +
+    '<div class="avatar">' + ((session.nama || '?').charAt(0).toUpperCase()) + '</div>' +
+    '<div style="overflow:hidden;">' +
+    '<div class="sidebar-user-name">' + (session.nama || '') + '</div>' +
+    '<div class="sidebar-user-role">' + (isAdmin ? 'Admin' : 'Member') + '</div>' +
+    '</div>' +
+    '<button class="logout-btn" onclick="logout()" title="Keluar">' + ICONS.logout + '</button>' +
+    '</div>' +
+    '</aside>';
+}
+
+function toggleSidebar() {
+  const el = document.getElementById('mainSidebar');
+  if (!el) return;
+  const collapsed = el.classList.toggle('collapsed');
+  localStorage.setItem('sidebar_collapsed', collapsed);
+  // Ikon panah berbalik arah sesuai status collapsed
+  const btn = el.querySelector('.sidebar-toggle');
+  if (btn) btn.style.transform = collapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+/* ============================================================
+   PROGRESS RING (signature element - dipakai di Dashboard)
+   ============================================================ */
+
+/**
+ * @param {Number} percent 0-100
+ * @param {String} size - 'small' atau '' (ukuran normal)
+ */
+function progressRingSVG(percent, size) {
+  const isSmall = size === 'small';
+  const dim = isSmall ? 44 : 54;
+  const r = isSmall ? 18 : 24;
+  const c = 2 * Math.PI * r;
+  const clamped = Math.max(0, Math.min(100, percent || 0));
+  const offset = c - (clamped / 100) * c;
+  const mid = dim / 2;
+
+  return (
+    '<div class="progress-ring-wrap ' + (isSmall ? 'small' : '') + '">' +
+    '<svg viewBox="0 0 ' + dim + ' ' + dim + '">' +
+    '<circle class="progress-ring-track" cx="' + mid + '" cy="' + mid + '" r="' + r + '"></circle>' +
+    '<circle class="progress-ring-fill" cx="' + mid + '" cy="' + mid + '" r="' + r + '" stroke-dasharray="' + c + '" stroke-dashoffset="' + offset + '"></circle>' +
+    '</svg>' +
+    '<div class="progress-ring-label">' + clamped + '%</div>' +
+    '</div>'
+  );
+}
