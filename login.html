@@ -165,7 +165,7 @@
 
         if (res.success) {
           setToken(res.token);
-          setSession({ nama: res.nama, role: res.role });
+          setSession({ nama: res.nama, role: res.role, email: res.email });
           showLoading('Berhasil! Mengarahkan ke dashboard...');
           window.location.href = 'dashboard.html';
         } else {
