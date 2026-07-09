@@ -7,7 +7,7 @@
  * ==========================================================
  */
 
-const API_URL = 'GANTI_DENGAN_URL_EXEC_APPS_SCRIPT_KAMU';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyngtoFKpA8-tMkXbXEXlBWmF3tJruQ4WGRu_uL6NG6n87pNP-pN1bOibJtoD_KVoiu/exec';
 
 /* ============================================================
    KOMUNIKASI KE API
