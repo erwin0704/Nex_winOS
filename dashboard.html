@@ -5,38 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard — Studio Kamu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css">
 </head>
-<body>
+<body class="app-page">
 
   <div class="app-shell">
-    <aside class="sidebar">
-      <div class="sidebar-brand">Studio Kamu<span style="color:var(--accent)">.</span></div>
-
-      <nav class="sidebar-nav">
-        <a class="sidebar-link active" href="dashboard.html"><span class="ic">🏠</span> Dashboard</a>
-        <a class="sidebar-link" href="prompt.html"><span class="ic">📋</span> Prompt Library</a>
-        <a class="sidebar-link" href="#produk-saya"><span class="ic">📦</span> Produk Saya</a>
-        <a class="sidebar-link" href="#update"><span class="ic">🚀</span> Update</a>
-        <a class="sidebar-link" id="adminLink" href="admin.html" style="display:none;"><span class="ic">⚙️</span> Admin Panel</a>
-      </nav>
-
-      <div class="sidebar-divider"></div>
-
-      <div class="sidebar-user">
-        <div class="avatar" id="userAvatar">?</div>
-        <div style="overflow:hidden;">
-          <div class="sidebar-user-name" id="userName">Memuat...</div>
-          <div class="sidebar-user-role" id="userRole"></div>
-        </div>
-        <button class="logout-btn" onclick="logout()" title="Keluar">⎋</button>
-      </div>
-    </aside>
+    <div id="sidebarMount"></div>
 
     <main class="main">
-      <h1 class="greeting">👋 Halo, <span id="greetingNama">...</span></h1>
-      <p class="greeting-sub">Senang lihat kamu lagi. Ini progress belajar kamu sejauh ini.</p>
+      <div class="greeting-row">
+        <div class="greeting-left">
+          <div class="greeting-avatar" id="greetingAvatar">?</div>
+          <div>
+            <h1 class="greeting">Halo, <span id="greetingNama">...</span> 👋</h1>
+            <p class="greeting-sub">Senang lihat kamu lagi. Ini progress belajar kamu.</p>
+          </div>
+        </div>
+        <div class="search-bar">
+          <span class="ic"></span>
+          <input type="text" id="searchProduk" placeholder="Cari produk kamu..." oninput="filterProduk()">
+        </div>
+      </div>
+
+      <!-- ============ OVERVIEW CARD (signature widget) ============ -->
+      <div class="overview-card" id="overviewCard" style="display:none;">
+        <div class="overview-stat">
+          <div class="num" id="ovTotalProduk">0</div>
+          <div class="lbl">Produk Dimiliki</div>
+        </div>
+        <div class="overview-divider"></div>
+        <div class="overview-stat" style="display:flex;align-items:center;gap:14px;">
+          <div id="ovRingWrap"></div>
+          <div>
+            <div class="lbl" style="margin-top:0;">Rata-rata Progress</div>
+          </div>
+        </div>
+        <div class="overview-divider"></div>
+        <div class="overview-stat">
+          <div class="num" id="ovKontenSelesai">0</div>
+          <div class="lbl">Konten Selesai Ditonton/Dibaca</div>
+        </div>
+      </div>
 
       <div class="section-title" id="produk-saya">📦 Produk Anda</div>
       <div class="produk-owned-grid" id="produkGrid">
@@ -68,16 +78,16 @@
 
   <script src="assets/api.js"></script>
   <script>
+    let ALL_PRODUK = [];
+
     if (requireAuth()) {
       const session = getSession();
+      mountSidebar('dashboard');
+      document.querySelector('.search-bar .ic').innerHTML = ICONS.search;
+
       if (session) {
         document.getElementById('greetingNama').textContent = session.nama;
-        document.getElementById('userName').textContent = session.nama;
-        document.getElementById('userRole').textContent = session.role === 'admin' ? 'Admin' : 'Member';
-        document.getElementById('userAvatar').textContent = session.nama.charAt(0).toUpperCase();
-        if (session.role === 'admin') {
-          document.getElementById('adminLink').style.display = 'flex';
-        }
+        document.getElementById('greetingAvatar').textContent = session.nama.charAt(0).toUpperCase();
       }
       loadDashboard();
     }
@@ -94,12 +104,30 @@
           showToast('Gagal memuat dashboard: ' + res.message);
           return;
         }
-        renderProduk(res.data.myProducts || []);
+        ALL_PRODUK = res.data.myProducts || [];
+        renderOverview(ALL_PRODUK);
+        renderProduk(ALL_PRODUK);
         renderContinueLearning(res.data.continueLearning);
         renderUpdates(res.data.updates || []);
       } catch (err) {
         showToast('Gagal terhubung ke server: ' + err.message);
       }
+    }
+
+    function renderOverview(list) {
+      const card = document.getElementById('overviewCard');
+      if (list.length === 0) { card.style.display = 'none'; return; }
+      card.style.display = 'flex';
+
+      const totalKonten = list.reduce(function (s, p) { return s + p.totalKonten; }, 0);
+      const selesaiKonten = list.reduce(function (s, p) { return s + p.selesaiKonten; }, 0);
+      const rataProgress = list.length > 0
+        ? Math.round(list.reduce(function (s, p) { return s + p.progressPercent; }, 0) / list.length)
+        : 0;
+
+      document.getElementById('ovTotalProduk').textContent = list.length;
+      document.getElementById('ovKontenSelesai').textContent = selesaiKonten + '/' + totalKonten;
+      document.getElementById('ovRingWrap').innerHTML = progressRingSVG(rataProgress, '');
     }
 
     function renderProduk(list) {
@@ -112,7 +140,7 @@
       }
       grid.innerHTML = list.map(function (p) {
         return (
-          '<a href="produk.html?id=' + p.id + '" class="produk-owned-card">' +
+          '<a href="produk.html?id=' + p.id + '" class="produk-owned-card" data-nama="' + p.nama.toLowerCase() + '">' +
           '<div class="produk-owned-top">' +
           '<div class="produk-owned-nama">' + p.nama + '</div>' +
           (p.expired ? '<span class="badge-expired">Kedaluwarsa</span>' : '') +
@@ -122,6 +150,14 @@
           '</a>'
         );
       }).join('');
+    }
+
+    function filterProduk() {
+      const keyword = document.getElementById('searchProduk').value.toLowerCase();
+      document.querySelectorAll('#produkGrid .produk-owned-card').forEach(function (card) {
+        const match = card.dataset.nama.indexOf(keyword) !== -1;
+        card.style.display = match ? 'block' : 'none';
+      });
     }
 
     function renderContinueLearning(cl) {
