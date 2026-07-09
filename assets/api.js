@@ -253,8 +253,7 @@ function mountSidebar(activeKey) {
   const items = [
     { key: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'home' },
     { key: 'produk', label: 'Produk Saya', href: 'dashboard.html#produk-saya', icon: 'box' },
-    { key: 'prompt', label: 'Prompt Library', href: 'prompt.html', icon: 'list' },
-    { key: 'update', label: 'Update', href: 'dashboard.html#update', icon: 'bell' }
+    { key: 'prompt', label: 'Prompt Library', href: 'prompt.html', icon: 'list' }
   ];
   if (isAdmin) items.push({ key: 'admin', label: 'Admin Panel', href: 'admin.html', icon: 'settings' });
 
@@ -273,15 +272,53 @@ function mountSidebar(activeKey) {
     '</div>' +
     '<nav class="sidebar-nav">' + navHtml + '</nav>' +
     '<div class="sidebar-divider"></div>' +
-    '<div class="sidebar-user">' +
+    '<div class="sidebar-user" onclick="toggleProfilePopup(event)" style="cursor:pointer;">' +
     '<div class="avatar">' + ((session.nama || '?').charAt(0).toUpperCase()) + '</div>' +
     '<div style="overflow:hidden;">' +
     '<div class="sidebar-user-name">' + (session.nama || '') + '</div>' +
     '<div class="sidebar-user-role">' + (isAdmin ? 'Admin' : 'Member') + '</div>' +
     '</div>' +
-    '<button class="logout-btn" onclick="logout()" title="Keluar">' + ICONS.logout + '</button>' +
     '</div>' +
-    '</aside>';
+    '</aside>' +
+    '<div id="profilePopupOverlay" style="display:none;position:fixed;inset:0;background:rgba(32,30,51,0.35);z-index:200;align-items:center;justify-content:center;" onclick="if(event.target===this) toggleProfilePopup()">' +
+    '<div style="background:var(--surface);border-radius:20px;padding:26px;width:100%;max-width:340px;box-shadow:var(--shadow);">' +
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">' +
+    '<div class="avatar" style="width:44px;height:44px;font-size:16px;">' + ((session.nama || '?').charAt(0).toUpperCase()) + '</div>' +
+    '<div><div style="font-weight:700;font-size:15px;">' + (session.nama || '') + '</div><div style="font-size:12px;color:var(--ink-soft);">' + (session.email || (isAdmin ? 'Admin' : 'Member')) + '</div></div>' +
+    '</div>' +
+    '<div class="field"><label>Nama</label><input type="text" id="profileNamaInput" value="' + (session.nama || '') + '"></div>' +
+    '<div id="profileMsg" class="form-msg"></div>' +
+    '<button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="saveProfile()">Simpan Perubahan</button>' +
+    '<button class="btn btn-outline btn-block" onclick="logout()">' + ICONS.logout + ' <span style="margin-left:6px;">Keluar</span></button>' +
+    '</div>' +
+    '</div>';
+}
+
+function toggleProfilePopup(e) {
+  if (e) e.stopPropagation();
+  const el = document.getElementById('profilePopupOverlay');
+  if (!el) return;
+  el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+}
+
+async function saveProfile() {
+  const nama = document.getElementById('profileNamaInput').value.trim();
+  if (!nama) { showFormMessage('profileMsg', 'Nama tidak boleh kosong.', 'error'); return; }
+  showLoading('Menyimpan profil...');
+  try {
+    const res = await apiPost('updateProfile', { nama: nama });
+    hideLoading();
+    if (!res.success) { showFormMessage('profileMsg', res.message, 'error'); return; }
+    const session = getSession() || {};
+    session.nama = nama;
+    setSession(session);
+    showFormMessage('profileMsg', 'Profil berhasil diperbarui.', 'success');
+    document.querySelectorAll('.sidebar-user-name').forEach(function (el) { el.textContent = nama; });
+    setTimeout(function () { window.location.reload(); }, 900);
+  } catch (err) {
+    hideLoading();
+    showFormMessage('profileMsg', 'Gagal terhubung ke server: ' + err.message, 'error');
+  }
 }
 
 function toggleSidebar() {
@@ -295,8 +332,46 @@ function toggleSidebar() {
 }
 
 /* ============================================================
-   PROGRESS RING (signature element - dipakai di Dashboard)
+   BELL NOTIFIKASI (Update Terbaru) — dipakai di header Dashboard
    ============================================================ */
+
+function renderNotifBell(updates) {
+  const hasUpdates = updates && updates.length > 0;
+  return (
+    '<div class="notif-bell-wrap">' +
+    '<button class="notif-bell-btn" onclick="toggleNotifDropdown(event)" aria-label="Update terbaru">' +
+    ICONS.bell +
+    (hasUpdates ? '<span class="notif-dot"></span>' : '') +
+    '</button>' +
+    '<div class="notif-dropdown" id="notifDropdown">' +
+    '<div class="notif-dropdown-title">🚀 Update Terbaru</div>' +
+    (hasUpdates
+      ? updates.map(function (u) {
+          return '<div class="update-item"><div class="update-judul">' + u.judul + '</div>' +
+            '<p style="font-size:12.5px;margin:2px 0;">' + u.isi + '</p>' +
+            '<div class="update-tanggal">' + u.tanggal + '</div></div>';
+        }).join('')
+      : '<p style="font-size:13px;margin:0;padding:8px 0;">Belum ada update terbaru.</p>') +
+    '</div>' +
+    '</div>'
+  );
+}
+
+function toggleNotifDropdown(e) {
+  if (e) e.stopPropagation();
+  document.getElementById('notifDropdown').classList.toggle('show');
+}
+
+function closeProfilePopup() {
+  const el = document.getElementById('profilePopupOverlay');
+  if (el) el.style.display = 'none';
+}
+
+document.addEventListener('click', function () {
+  const dd = document.getElementById('notifDropdown');
+  if (dd) dd.classList.remove('show');
+  closeProfilePopup();
+});
 
 /**
  * @param {Number} percent 0-100
