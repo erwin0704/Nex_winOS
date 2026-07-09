@@ -66,6 +66,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  background: var(--accent-soft);
+  padding: 6px 12px;
+  border-radius: 99px;
+}
+.eyebrow::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  animation: pulseDot 1.6s ease-in-out infinite;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
 }
 
 .chip {
@@ -123,13 +136,29 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   position: absolute; width: 260px; background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow); padding: 18px;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+  animation: floatCard 5s ease-in-out infinite;
+}
+.file-card:hover {
+  box-shadow: 0 16px 36px rgba(108, 92, 231, 0.22);
+  z-index: 10 !important;
+}
+.file-card.c1:hover { transform: rotate(-2deg) translateY(-6px) scale(1.04); }
+.file-card.c2:hover { transform: rotate(1deg) translateY(-6px) scale(1.04); }
+.file-card.c3:hover { transform: rotate(0deg) translateY(-6px) scale(1.04); }
+.file-card.c1 { top: 0; left: 10%; transform: rotate(-6deg); z-index: 1; animation-delay: 0s; }
+.file-card.c2 { top: 70px; left: 30%; transform: rotate(4deg); z-index: 2; animation-delay: 1.4s; }
+.file-card.c3 { top: 150px; left: 5%; transform: rotate(2deg); z-index: 3; animation-delay: 2.8s; }
+@keyframes floatCard {
+  0%, 100% { margin-top: 0; }
+  50% { margin-top: -8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .file-card { animation: none; }
 }
 .file-card .chip { margin-bottom: 10px; }
 .file-card .file-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
 .file-card .file-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
-.file-card.c1 { top: 0; left: 10%; transform: rotate(-6deg); z-index: 1; }
-.file-card.c2 { top: 70px; left: 30%; transform: rotate(4deg); z-index: 2; }
-.file-card.c3 { top: 150px; left: 5%; transform: rotate(2deg); z-index: 3; }
 
 section { padding: 64px 0; }
 .section-head { max-width: 620px; margin-bottom: 40px; }
@@ -379,7 +408,27 @@ tr:last-child td { border-bottom: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { font-size: 13px; font-weight: 600; color: var(--ink); }
 
-/* ---------- Responsive ---------- */
+/* ---------- Bell Notifikasi ---------- */
+.notif-bell-wrap { position: relative; }
+.notif-bell-btn {
+  width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--surface); display: flex; align-items: center; justify-content: center;
+  color: var(--ink-soft); cursor: pointer; position: relative; flex-shrink: 0;
+}
+.notif-bell-btn:hover { border-color: var(--accent); color: var(--accent); }
+.notif-bell-btn svg { width: 19px; height: 19px; }
+.notif-dot { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 2px solid var(--surface); }
+.notif-dropdown {
+  display: none; position: absolute; right: 0; top: 52px; width: 320px; max-height: 360px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 16px; z-index: 60;
+}
+.notif-dropdown.show { display: block; }
+.notif-dropdown-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+
+/* ---------- Responsive: bell & search bar row ---------- */
+.greeting-right { display: flex; align-items: center; gap: 12px; }
+
 @media (max-width: 860px) {
   .hero-grid { grid-template-columns: 1fr; }
   .hero h1 { font-size: 34px; }
