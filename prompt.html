@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prompt Library — Studio Kamu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .content-inner { max-width: 780px; }
+    .page-sub { font-size: 14px; margin-bottom: 24px; }
+
+    .search-bar-full {
+      display: flex; align-items: center; gap: 10px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; margin-bottom: 16px;
+    }
+    .search-bar-full input { flex: 1; border: none; outline: none; background: transparent; font-size: 14px; font-family: var(--font-body); color: var(--ink); }
+    .search-bar-full .ic { color: var(--ink-soft); display: flex; }
+    .search-bar-full svg { width: 18px; height: 18px; }
+
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+    .filter-pill { padding: 7px 14px; border-radius: 99px; font-size: 13px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--ink-soft); cursor: pointer; }
+    .filter-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .filter-pill:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+    .prompt-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 10px; cursor: pointer; }
+    .prompt-item-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .prompt-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .prompt-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .prompt-produk { font-size: 12px; color: var(--ink-soft); }
+    .prompt-preview { font-size: 13px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prompt-item.open .prompt-preview { display: none; }
+    .prompt-full { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .prompt-item.open .prompt-full { display: block; }
+    .prompt-full-text { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; background: var(--bg); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; color: var(--ink); }
+    .copy-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); cursor: pointer; }
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .copy-btn.copied { background: #ECFDF5; border-color: #A7F3D0; color: var(--success); }
+    .toggle-chevron { color: var(--ink-soft); font-size: 13px; flex-shrink: 0; transition: transform 0.2s ease; }
+    .prompt-item.open .toggle-chevron { transform: rotate(180deg); }
+  </style>
+</head>
+<body class="app-page">
+  <div class="app-shell">
+    <div id="sidebarMount"></div>
+    <main class="main">
+      <div class="content-inner">
+        <h1 class="page-title">📋 Prompt Library</h1>
+        <p class="page-sub">Semua prompt siap pakai dari produk yang kamu miliki.</p>
+
+        <div class="search-bar-full">
+          <span class="ic" id="searchIcon"></span>
+          <input type="text" id="searchInput" placeholder="Cari prompt..." oninput="renderList()">
+        </div>
+
+        <div class="filter-row" id="filterRow"></div>
+        <div id="promptListArea">
+          <div class="empty-state">Memuat prompt...</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="assets/api.js"></script>
+  <script>
+    let ALL_PROMPTS = [];
+    let activeCategory = 'Semua';
+
+    if (requireAuth()) {
+      mountSidebar('prompt');
+      document.getElementById('searchIcon').innerHTML = ICONS.search;
+      loadPrompts();
+    }
+
+    async function loadPrompts() {
+      try {
+        const res = await apiGet('getMyPrompts', {});
+        if (!res.success) { showToast('Gagal memuat prompt: ' + res.message); return; }
+        ALL_PROMPTS = res.data || [];
+        renderFilters();
+        renderList();
+      } catch (err) {
+        document.getElementById('promptListArea').innerHTML = '<div class="empty-state">Gagal memuat prompt. Coba muat ulang halaman.</div>';
+      }
+    }
+
+    function getCategories() {
+      const set = {};
+      ALL_PROMPTS.forEach(function (p) { set[p.kategori || 'Umum'] = true; });
+      return ['Semua'].concat(Object.keys(set));
+    }
+
+    function renderFilters() {
+      document.getElementById('filterRow').innerHTML = getCategories().map(function (c) {
+        return '<button class="filter-pill ' + (c === activeCategory ? 'active' : '') + '" onclick="setCategory(\'' + escapeQ(c) + '\')">' + c + '</button>';
+      }).join('');
+    }
+
+    function escapeQ(str) { return String(str).replace(/'/g, "\\'"); }
+
+    function setCategory(cat) {
+      activeCategory = cat;
+      renderFilters();
+      renderList();
+    }
+
+    function renderList() {
+      const keyword = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = ALL_PROMPTS.filter(function (p) {
+        const matchCategory = activeCategory === 'Semua' || (p.kategori || 'Umum') === activeCategory;
+        const matchKeyword = !keyword || p.judul.toLowerCase().indexOf(keyword) !== -1 || p.isi_prompt.toLowerCase().indexOf(keyword) !== -1;
+        return matchCategory && matchKeyword;
+      });
+
+      const area = document.getElementById('promptListArea');
+      if (filtered.length === 0) {
+        area.innerHTML = '<div class="empty-state">' + (ALL_PROMPTS.length === 0 ? 'Belum ada prompt yang tersedia untuk produkmu.' : 'Tidak ada prompt yang cocok. Coba kata kunci atau kategori lain.') + '</div>';
+        return;
+      }
+
+      area.innerHTML = filtered.map(function (p, idx) {
+        const preview = p.isi_prompt.length > 90 ? p.isi_prompt.substring(0, 90) + '...' : p.isi_prompt;
+        return (
+          '<div class="prompt-item" id="prompt-' + idx + '">' +
+          '<div class="prompt-item-head" onclick="toggleOpen(' + idx + ')">' +
+          '<div style="flex:1;min-width:0;">' +
+          '<div class="prompt-title">' + p.judul + '</div>' +
+          '<div class="prompt-meta"><span class="chip">' + (p.kategori || 'Umum') + '</span><span class="prompt-produk">' + p.produkNama + '</span></div>' +
+          '<div class="prompt-preview">' + preview + '</div>' +
+          '</div><span class="toggle-chevron">▾</span></div>' +
+          '<div class="prompt-full">' +
+          '<div class="prompt-full-text">' + escapeHtml(p.isi_prompt) + '</div>' +
+          '<button class="copy-btn" onclick="event.stopPropagation(); copyPrompt(' + idx + ', this)">📋 Salin Prompt</button>' +
+          '</div></div>'
+        );
+      }).join('');
+
+      window._currentFiltered = filtered;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function toggleOpen(idx) {
+      document.getElementById('prompt-' + idx).classList.toggle('open');
+    }
+
+    function copyPrompt(idx, btnEl) {
+      const text = window._currentFiltered[idx].isi_prompt;
+      const done = function () {
+        const original = btnEl.textContent;
+        btnEl.textContent = '✓ Tersalin!';
+        btnEl.classList.add('copied');
+        setTimeout(function () { btnEl.textContent = original; btnEl.classList.remove('copied'); }, 1800);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text, done); });
+      } else {
+        fallbackCopy(text, done);
+      }
+    }
+
+    function fallbackCopy(text, done) {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (err) { alert('Gagal menyalin otomatis, silakan salin manual.'); }
+      document.body.removeChild(ta);
+    }
+  </script>
+</body>
+</html>
