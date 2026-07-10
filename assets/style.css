@@ -426,7 +426,52 @@ tr:last-child td { border-bottom: none; }
 .notif-dropdown.show { display: block; }
 .notif-dropdown-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
 
-/* ---------- Responsive: bell & search bar row ---------- */
+/* ---------- Hero: dekorasi blob + interaksi kartu file ---------- */
+.hero { position: relative; overflow: hidden; }
+.hero-blob {
+  position: absolute; border-radius: 50%; filter: blur(60px); z-index: 0; pointer-events: none;
+}
+.hero-blob.b1 { width: 320px; height: 320px; background: radial-gradient(circle, #D8D3FF 0%, transparent 70%); top: -80px; right: 10%; }
+.hero-blob.b2 { width: 260px; height: 260px; background: radial-gradient(circle, #FFE3D3 0%, transparent 70%); bottom: -60px; left: 5%; }
+.hero-grid { position: relative; z-index: 1; }
+
+.hero h1 { position: relative; }
+.hero h1 span.underline-accent {
+  position: relative;
+  background: linear-gradient(180deg, transparent 62%, var(--accent-soft) 62%);
+}
+
+.file-stack { position: relative; height: 340px; }
+.file-card {
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  animation: floatCard 5s ease-in-out infinite;
+  cursor: default;
+}
+.file-card:hover {
+  transform: translateY(-10px) rotate(0deg) scale(1.04) !important;
+  box-shadow: 0 16px 34px rgba(108, 93, 211, 0.22);
+  z-index: 5 !important;
+}
+.file-card.c1 { animation-delay: 0s; }
+.file-card.c2 { animation-delay: 1.2s; }
+.file-card.c3 { animation-delay: 2.4s; }
+
+@keyframes floatCard {
+  0%, 100% { margin-top: 0px; }
+  50% { margin-top: -8px; }
+}
+
+/* ---------- Interaksi kartu produk landing ---------- */
+.produk-card { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+.produk-card:hover { border-color: var(--accent); }
+.produk-thumb { transition: transform 0.3s ease; }
+.produk-card:hover .produk-thumb { transform: scale(1.03); }
+
+@media (prefers-reduced-motion: reduce) {
+  .file-card { animation: none; }
+}
+
+
 .greeting-right { display: flex; align-items: center; gap: 12px; }
 
 @media (max-width: 860px) {
