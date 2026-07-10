@@ -115,7 +115,7 @@ function ensureLoadingOverlay() {
   const div = document.createElement('div');
   div.id = 'globalLoadingOverlay';
   div.className = 'loading-overlay';
-  div.innerHTML = '<div class="loading-box"><div class="loading-spinner"></div><div class="loading-text" id="globalLoadingText">Memproses...</div></div>';
+  div.innerHTML = '<div class="loading-box"><div class="loading-spinner-wrap"><div class="loading-spinner"></div><div class="loading-spinner-inner"></div><div class="loading-dot"></div></div><div class="loading-text" id="globalLoadingText">Memproses...</div></div>';
   document.body.appendChild(div);
 }
 
@@ -231,7 +231,16 @@ const ICONS = {
   search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>',
   chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>',
   key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"></circle><path d="m10.5 12.5 8-8"></path><path d="m17 6 3 3"></path><path d="m14 9 2 2"></path></svg>',
-  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>'
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+  gift: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8"></path><path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8"></path></svg>',
+  help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 5"></path><path d="M12 17h.01"></path></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path></svg>',
+  gift: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4"></rect><path d="M12 8v13"></path><path d="M19 12v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-7"></path><path d="M12 8H7.5a2.5 2.5 0 1 1 0-5C11 3 12 8 12 8Z"></path><path d="M12 8h4.5a2.5 2.5 0 1 0 0-5C13 3 12 8 12 8Z"></path></svg>',
+  help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+  bookOpen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2Z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7Z"></path></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>',
+  fileText: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg>',
+  download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>'
 };
 
 /* ============================================================
@@ -252,7 +261,6 @@ function mountSidebar(activeKey) {
 
   const items = [
     { key: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'home' },
-    { key: 'produk', label: 'Produk Saya', href: 'dashboard.html#produk-saya', icon: 'box' },
     { key: 'prompt', label: 'Prompt Library', href: 'prompt.html', icon: 'list' }
   ];
   if (isAdmin) items.push({ key: 'admin', label: 'Admin Panel', href: 'admin.html', icon: 'settings' });
@@ -264,6 +272,10 @@ function mountSidebar(activeKey) {
       '</a>';
   }).join('');
 
+  const avatarHtml = session.avatar
+    ? '<img src="' + session.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+    : ((session.nama || '?').charAt(0).toUpperCase());
+
   mountEl.outerHTML =
     '<aside class="sidebar ' + (collapsed ? 'collapsed' : '') + '" id="mainSidebar">' +
     '<div class="sidebar-top">' +
@@ -273,32 +285,156 @@ function mountSidebar(activeKey) {
     '<nav class="sidebar-nav">' + navHtml + '</nav>' +
     '<div class="sidebar-divider"></div>' +
     '<div class="sidebar-user" onclick="toggleProfilePopup(event)" style="cursor:pointer;">' +
-    '<div class="avatar">' + ((session.nama || '?').charAt(0).toUpperCase()) + '</div>' +
+    '<div class="avatar" id="sidebarAvatar">' + avatarHtml + '</div>' +
     '<div style="overflow:hidden;">' +
     '<div class="sidebar-user-name">' + (session.nama || '') + '</div>' +
     '<div class="sidebar-user-role">' + (isAdmin ? 'Admin' : 'Member') + '</div>' +
     '</div>' +
     '</div>' +
     '</aside>' +
-    '<div id="profilePopupOverlay" style="display:none;position:fixed;inset:0;background:rgba(32,30,51,0.35);z-index:200;align-items:center;justify-content:center;" onclick="if(event.target===this) toggleProfilePopup()">' +
-    '<div style="background:var(--surface);border-radius:20px;padding:26px;width:100%;max-width:340px;box-shadow:var(--shadow);">' +
-    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">' +
-    '<div class="avatar" style="width:44px;height:44px;font-size:16px;">' + ((session.nama || '?').charAt(0).toUpperCase()) + '</div>' +
-    '<div><div style="font-weight:700;font-size:15px;">' + (session.nama || '') + '</div><div style="font-size:12px;color:var(--ink-soft);">' + (session.email || (isAdmin ? 'Admin' : 'Member')) + '</div></div>' +
+    '<div id="profilePopupOverlay" class="profile-popup-overlay" onclick="if(event.target===this) toggleProfilePopup()">' +
+    '<div class="profile-popup">' +
+
+    '<div class="profile-popup-head">' +
+    '<div class="profile-avatar-edit">' +
+    '<div class="avatar" id="popupAvatar" style="width:56px;height:56px;font-size:20px;">' + avatarHtml + '</div>' +
+    '<label class="avatar-edit-btn" title="Ganti foto profil">' + ICONS.camera +
+    '<input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)">' +
+    '</label>' +
     '</div>' +
-    '<div class="field"><label>Nama</label><input type="text" id="profileNamaInput" value="' + (session.nama || '') + '"></div>' +
+    '<div><div style="font-weight:700;font-size:15px;">' + (session.nama || '') + '</div>' +
+    '<div style="font-size:12px;color:var(--ink-soft);">' + (session.email || (isAdmin ? 'Admin' : 'Member')) + '</div></div>' +
+    '</div>' +
+
+    '<div class="profile-popup-body">' +
+
+    '<div class="profile-section-label">Nama Tampilan</div>' +
+    '<div class="field" style="margin-bottom:10px;"><input type="text" id="profileNamaInput" value="' + (session.nama || '') + '"></div>' +
     '<div id="profileMsg" class="form-msg"></div>' +
-    '<button class="btn btn-primary btn-block" style="margin-bottom:8px;" onclick="saveProfile()">Simpan Perubahan</button>' +
-    '<button class="btn btn-outline btn-block" onclick="logout()">' + ICONS.logout + ' <span style="margin-left:6px;">Keluar</span></button>' +
+    '<button class="btn btn-primary btn-sm btn-block" style="margin-bottom:16px;" onclick="saveProfile()">Simpan Nama</button>' +
+
+    '<div class="profile-divider"></div>' +
+
+    '<div class="profile-section-label">Ganti Password</div>' +
+    '<div class="field" style="margin-bottom:8px;"><input type="password" id="oldPasswordInput" placeholder="Password lama"></div>' +
+    '<div class="field" style="margin-bottom:10px;"><input type="password" id="newPasswordInput" placeholder="Password baru (min. 6 karakter)"></div>' +
+    '<div id="passwordMsg" class="form-msg"></div>' +
+    '<button class="btn btn-outline btn-sm btn-block" style="margin-bottom:16px;" onclick="savePassword()">Simpan Password</button>' +
+
+    '<div class="profile-divider"></div>' +
+
+    '<div class="theme-toggle-row">' +
+    '<span class="profile-section-label" style="margin:0;">Tema Tampilan</span>' +
+    '<button class="theme-switch" id="themeSwitchBtn" onclick="toggleTheme()" aria-label="Ganti tema gelap/terang"><span class="theme-switch-knob"></span></button>' +
+    '</div>' +
+
+    '<div class="profile-divider"></div>' +
+
+    '<button class="logout-link" onclick="logout()">' + ICONS.logout + ' Keluar</button>' +
+
+    '</div>' +
     '</div>' +
     '</div>';
+
+  updateThemeSwitchUI();
 }
+
+/**
+ * Ubah file gambar jadi avatar kecil (di-resize di browser sebelum dikirim,
+ * supaya muat di 1 sel Google Sheets dan hemat kuota).
+ */
+function handleAvatarFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showFormMessage('profileMsg', 'File harus berupa gambar.', 'error'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function (ev) {
+    const img = new Image();
+    img.onload = function () {
+      const size = 96;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const minSide = Math.min(img.width, img.height);
+      const sx = (img.width - minSide) / 2, sy = (img.height - minSide) / 2;
+      ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      saveAvatar(dataUrl);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveAvatar(dataUrl) {
+  showLoading('Menyimpan foto profil...');
+  try {
+    const res = await apiPost('updateAvatar', { avatarData: dataUrl });
+    hideLoading();
+    if (!res.success) { showFormMessage('profileMsg', res.message, 'error'); return; }
+    const session = getSession() || {};
+    session.avatar = dataUrl;
+    setSession(session);
+    document.querySelectorAll('#sidebarAvatar, #popupAvatar').forEach(function (el) {
+      el.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    });
+    showFormMessage('profileMsg', 'Foto profil berhasil diperbarui.', 'success');
+  } catch (err) {
+    hideLoading();
+    showFormMessage('profileMsg', 'Gagal terhubung ke server: ' + err.message, 'error');
+  }
+}
+
+async function savePassword() {
+  const oldPassword = document.getElementById('oldPasswordInput').value;
+  const newPassword = document.getElementById('newPasswordInput').value;
+  if (!oldPassword || !newPassword) { showFormMessage('passwordMsg', 'Isi password lama dan baru.', 'error'); return; }
+  showLoading('Menyimpan password...');
+  try {
+    const res = await apiPost('changePassword', { oldPassword: oldPassword, newPassword: newPassword });
+    hideLoading();
+    if (!res.success) { showFormMessage('passwordMsg', res.message, 'error'); return; }
+    showFormMessage('passwordMsg', res.message, 'success');
+    document.getElementById('oldPasswordInput').value = '';
+    document.getElementById('newPasswordInput').value = '';
+  } catch (err) {
+    hideLoading();
+    showFormMessage('passwordMsg', 'Gagal terhubung ke server: ' + err.message, 'error');
+  }
+}
+
+/* ============================================================
+   TEMA GELAP / TERANG
+   ============================================================ */
+
+function initTheme() {
+  const saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  updateThemeSwitchUI();
+}
+
+function updateThemeSwitchUI() {
+  const btn = document.getElementById('themeSwitchBtn');
+  if (!btn) return;
+  const isDark = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
+  btn.classList.toggle('on', isDark);
+}
+
+initTheme();
 
 function toggleProfilePopup(e) {
   if (e) e.stopPropagation();
   const el = document.getElementById('profilePopupOverlay');
   if (!el) return;
-  el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+  el.classList.toggle('show');
 }
 
 async function saveProfile() {
@@ -312,9 +448,8 @@ async function saveProfile() {
     const session = getSession() || {};
     session.nama = nama;
     setSession(session);
-    showFormMessage('profileMsg', 'Profil berhasil diperbarui.', 'success');
+    showFormMessage('profileMsg', 'Nama berhasil diperbarui.', 'success');
     document.querySelectorAll('.sidebar-user-name').forEach(function (el) { el.textContent = nama; });
-    setTimeout(function () { window.location.reload(); }, 900);
   } catch (err) {
     hideLoading();
     showFormMessage('profileMsg', 'Gagal terhubung ke server: ' + err.message, 'error');
