@@ -335,6 +335,33 @@ body.app-page { background: var(--bg-gradient); }
 .progress-ring-wrap.small .progress-ring-label { color: var(--ink); font-size: 11px; }
 .section-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); margin: 32px 0 14px; }
 .section-title:first-of-type { margin-top: 0; }
+.section-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+  flex-shrink: 0; animation: bubbleFloat 3.4s ease-in-out infinite;
+}
+.section-ic svg { width: 15px; height: 15px; }
+.info-card h3 { display: flex; align-items: center; gap: 8px; }
+.info-card h3 .section-ic { width: 28px; height: 28px; }
+.info-card h3 .section-ic svg { width: 14px; height: 14px; }
+@media (prefers-reduced-motion: reduce) { .section-ic { animation: none; } }
+
+.section-divider { height: 1px; background: linear-gradient(90deg, var(--border), transparent); margin: 36px 0 8px; }
+
+/* ---------- Bubble mengambang di background konten (dekorasi) ---------- */
+.main { position: relative; overflow: visible; }
+.bg-bubble {
+  position: fixed; border-radius: 50%; filter: blur(50px); z-index: -1; pointer-events: none; opacity: 0.55;
+  animation: bubbleFloat 9s ease-in-out infinite;
+}
+.bg-bubble.bb1 { width: 260px; height: 260px; background: radial-gradient(circle, #D8D3FF 0%, transparent 72%); top: 8%; right: 6%; }
+.bg-bubble.bb2 { width: 200px; height: 200px; background: radial-gradient(circle, #FFE3D3 0%, transparent 72%); bottom: 6%; left: 46%; animation-delay: 3s; }
+@keyframes bubbleFloat {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-18px) translateX(10px); }
+}
+@media (prefers-reduced-motion: reduce) { .bg-bubble { animation: none; } }
+@media (max-width: 860px) { .bg-bubble { display: none; } }
 
 .produk-owned-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .produk-owned-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: block; }
@@ -398,17 +425,77 @@ tr:last-child td { border-bottom: none; }
 
 /* ---------- Popup Loading Global ---------- */
 .loading-overlay {
-  position: fixed; inset: 0; background: rgba(250, 250, 249, 0.75); backdrop-filter: blur(2px);
+  position: fixed; inset: 0; background: rgba(241, 241, 254, 0.82); backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center; z-index: 9999;
-  opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
 }
 .loading-overlay.show { opacity: 1; pointer-events: all; }
-.loading-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 26px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); }
-.loading-spinner { width: 20px; height: 20px; border: 3px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+.loading-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+  padding: 36px 46px; display: flex; flex-direction: column; align-items: center; gap: 20px;
+  box-shadow: var(--shadow);
+  animation: loadingBoxPop 0.25s ease;
+}
+@keyframes loadingBoxPop {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.loading-spinner-wrap { position: relative; width: 68px; height: 68px; flex-shrink: 0; }
+.loading-spinner {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--accent) 0deg, var(--accent) 100deg, transparent 100deg, transparent 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+  animation: spin 0.9s cubic-bezier(0.6, 0.1, 0.4, 0.9) infinite;
+}
+.loading-spinner-inner {
+  position: absolute; inset: 12px; border-radius: 50%;
+  background: conic-gradient(from 180deg, var(--accent-soft) 0deg, var(--accent-soft) 140deg, transparent 140deg, transparent 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+  animation: spin 1.3s linear infinite reverse;
+}
+.loading-dot {
+  position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); transform: translate(-50%, -50%); animation: pulseDot 1.4s ease-in-out infinite;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { font-size: 13px; font-weight: 600; color: var(--ink); }
+@keyframes pulseDot { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 50% { transform: translate(-50%, -50%) scale(1.6); opacity: 0.5; } }
+.loading-text { font-size: 14.5px; font-weight: 700; color: var(--ink); text-align: center; }
 
-/* ---------- Bell Notifikasi ---------- */
+/* ---------- Icon bubble mengambang (pengganti emoji) ---------- */
+.icon-bubble {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+  flex-shrink: 0; animation: bubbleFloat 3.4s ease-in-out infinite;
+}
+.icon-bubble svg { width: 17px; height: 17px; }
+.icon-bubble.sm { width: 26px; height: 26px; }
+.icon-bubble.sm svg { width: 14px; height: 14px; }
+.icon-bubble.peach { background: #FFEFE6; color: #D67A46; }
+.icon-bubble.mint { background: #E4F9F1; color: #12A182; }
+@keyframes bubbleFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .icon-bubble { animation: none; } }
+
+.section-title { display: flex; align-items: center; gap: 10px; }
+.section-divider { height: 1px; background: var(--border); margin: 32px 0 0; border: none; }
+
+
+.skeleton-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px; overflow: hidden;
+}
+.skeleton-line {
+  height: 14px; border-radius: 6px; margin-bottom: 10px;
+  background: linear-gradient(90deg, var(--bg) 25%, #E4E1FA 50%, var(--bg) 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite;
+}
+.skeleton-line.w60 { width: 60%; }
+.skeleton-line.w40 { width: 40%; height: 10px; }
+.skeleton-line.bar { height: 8px; border-radius: 99px; margin: 14px 0 8px; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+
 .notif-bell-wrap { position: relative; }
 .notif-bell-btn {
   width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border);
@@ -417,6 +504,7 @@ tr:last-child td { border-bottom: none; }
 }
 .notif-bell-btn:hover { border-color: var(--accent); color: var(--accent); }
 .notif-bell-btn svg { width: 19px; height: 19px; }
+#notifIcon svg { width: 20px; height: 20px; display: block; }
 .notif-dot { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 2px solid var(--surface); }
 .notif-dropdown {
   display: none; position: absolute; right: 0; top: 52px; width: 320px; max-height: 360px; overflow-y: auto;
