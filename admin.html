@@ -109,12 +109,6 @@
   <script>
     const STATE = { produkList: [], selectedProduk: null, modulList: [], selectedModul: null, kontenList: [] };
 
-    if (requireAdmin()) {
-      mountSidebar('admin');
-      initAdminTabs();
-      loadStatistik();
-    }
-
     /* ---------------- TAB NAVIGASI ---------------- */
     const TABS = [
       { key: 'statistik', label: 'Statistik', icon: 'chart' },
@@ -124,6 +118,19 @@
       { key: 'users', label: 'Users', icon: 'users' },
       { key: 'update', label: 'Update', icon: 'bell' }
     ];
+
+    if (requireAdmin()) {
+      try {
+        mountSidebar('admin');
+        initAdminTabs();
+        loadStatistik();
+      } catch (err) {
+        console.error('Admin init error:', err);
+        document.getElementById('adminTabs').innerHTML =
+          '<div class="empty-state" style="grid-column:1/-1;border-color:#F0506E;">⚠️ Gagal memuat Admin Panel: ' + err.message +
+          '<br><small>Coba hard refresh (Ctrl+Shift+R). Kalau masih error, pastikan file assets/api.js di GitHub sudah versi terbaru.</small></div>';
+      }
+    }
 
     function initAdminTabs() {
       document.getElementById('adminTabs').innerHTML = TABS.map(function (t, i) {
