@@ -14,7 +14,7 @@
  * ==========================================================
  */
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbxltAMFKSJP_c_EdaAm6wyZBnmsnmuEvjddrbSWrT5hXmCVRkvCxn72D6zaBdvZrj4Z/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyngtoFKpA8-tMkXbXEXlBWmF3tJruQ4WGRu_uL6NG6n87pNP-pN1bOibJtoD_KVoiu/exec';
 
 /* ============================================================
    ESCAPING (WAJIB dipakai sebelum menyisipkan data ke HTML)
@@ -324,6 +324,8 @@ const ICONS = {
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.42.68.7 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>',
   logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg>',
   chevronLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>',
+  menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>',
   power: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>',
@@ -395,10 +397,11 @@ function mountSidebar(activeKey) {
   mountEl.outerHTML =
     '<aside class="sidebar ' + (collapsed ? 'collapsed' : '') + '" id="mainSidebar">' +
     '<div class="sidebar-top">' +
+    '<button class="mobile-nav-toggle" id="mobileNavToggle" onclick="toggleMobileNav()" aria-label="Buka menu" aria-expanded="false">' + ICONS.menu + '</button>' +
     '<div class="sidebar-brand">Studio Kamu<span style="color:var(--accent)">.</span></div>' +
     '<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Sembunyikan/tampilkan menu">' + ICONS.chevronLeft + '</button>' +
     '</div>' +
-    '<nav class="sidebar-nav">' + navHtml + '</nav>' +
+    '<nav class="sidebar-nav" onclick="closeMobileNav()">' + navHtml + '</nav>' +
     '<div class="sidebar-divider"></div>' +
     '<div class="sidebar-user" onclick="toggleProfilePopup(event)" style="cursor:pointer;">' +
     '<div class="avatar" id="sidebarAvatar">' + avatarHtml + '</div>' +
@@ -645,6 +648,29 @@ function toggleSidebar() {
   if (btn) btn.style.transform = collapsed ? 'rotate(180deg)' : 'rotate(0deg)';
 }
 
+/**
+ * BARU: menu navigasi di HP (Dashboard/Prompt Library/Admin Panel) — dulu
+ * berupa deretan pil horizontal yang saling berdesakan dan teksnya
+ * terpotong. Sekarang disembunyikan sebagai dropdown, dibuka lewat tombol ☰.
+ */
+function toggleMobileNav() {
+  const el = document.getElementById('mainSidebar');
+  const btn = document.getElementById('mobileNavToggle');
+  if (!el || !btn) return;
+  const open = el.classList.toggle('mobile-nav-open');
+  btn.innerHTML = open ? ICONS.close : ICONS.menu;
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+function closeMobileNav() {
+  const el = document.getElementById('mainSidebar');
+  const btn = document.getElementById('mobileNavToggle');
+  if (!el || !btn) return;
+  el.classList.remove('mobile-nav-open');
+  btn.innerHTML = ICONS.menu;
+  btn.setAttribute('aria-expanded', 'false');
+}
+
 /** Tutup dropdown/popup saat klik di luar area-nya. */
 document.addEventListener('click', function (e) {
   const dd = document.getElementById('notifDropdown');
@@ -654,6 +680,9 @@ document.addEventListener('click', function (e) {
   }
   if (!e.target.closest('#profilePopupOverlay') && !e.target.closest('.sidebar-user')) {
     closeProfilePopup();
+  }
+  if (!e.target.closest('.sidebar-nav') && !e.target.closest('#mobileNavToggle')) {
+    closeMobileNav();
   }
 });
 
