@@ -65,6 +65,7 @@
   <script src="assets/api.js"></script>
   <script>
     let ALL_PROMPTS = [];
+    let FILTERED = [];
     let activeCategory = 'Semua';
 
     if (requireAuth()) {
@@ -76,28 +77,45 @@
     async function loadPrompts() {
       try {
         const res = await apiGet('getMyPrompts', {});
-        if (!res.success) { showToast('Gagal memuat prompt: ' + res.message); return; }
-        ALL_PROMPTS = res.data || [];
+        if (handleSessionExpired(res)) return;
+        if (!res.success) {
+          document.getElementById('promptListArea').innerHTML =
+            '<div class="empty-state">Gagal memuat prompt: ' + escapeHtml(res.message) + '</div>';
+          return;
+        }
+        // FIX: isi_prompt/judul kosong di sheet dulu bikin .toLowerCase() melempar
+        // TypeError dan seluruh daftar prompt gagal tampil.
+        ALL_PROMPTS = (res.data || []).map(function (p) {
+          return {
+            id: p.id,
+            judul: String(p.judul || '(Tanpa judul)'),
+            isi_prompt: String(p.isi_prompt || ''),
+            kategori: String(p.kategori || 'Umum'),
+            produkNama: String(p.produkNama || '')
+          };
+        });
         renderFilters();
         renderList();
       } catch (err) {
-        document.getElementById('promptListArea').innerHTML = '<div class="empty-state">Gagal memuat prompt. Coba muat ulang halaman.</div>';
+        document.getElementById('promptListArea').innerHTML =
+          '<div class="empty-state">Gagal memuat prompt. Coba muat ulang halaman.<br><small>' + escapeHtml(err.message) + '</small></div>';
       }
     }
 
     function getCategories() {
       const set = {};
-      ALL_PROMPTS.forEach(function (p) { set[p.kategori || 'Umum'] = true; });
-      return ['Semua'].concat(Object.keys(set));
+      ALL_PROMPTS.forEach(function (p) { set[p.kategori] = true; });
+      return ['Semua'].concat(Object.keys(set).sort());
     }
 
     function renderFilters() {
+      // FIX: kategori dulu dimasukkan ke onclick tanpa escaping HTML —
+      // kategori berisi tanda kutip ganda merusak atribut.
       document.getElementById('filterRow').innerHTML = getCategories().map(function (c) {
-        return '<button class="filter-pill ' + (c === activeCategory ? 'active' : '') + '" onclick="setCategory(\'' + escapeQ(c) + '\')">' + c + '</button>';
+        return '<button class="filter-pill ' + (c === activeCategory ? 'active' : '') + '" ' +
+          'onclick="setCategory(\'' + escapeJs(c) + '\')">' + escapeHtml(c) + '</button>';
       }).join('');
     }
-
-    function escapeQ(str) { return String(str).replace(/'/g, "\\'"); }
 
     function setCategory(cat) {
       activeCategory = cat;
@@ -107,27 +125,34 @@
 
     function renderList() {
       const keyword = document.getElementById('searchInput').value.toLowerCase();
-      const filtered = ALL_PROMPTS.filter(function (p) {
-        const matchCategory = activeCategory === 'Semua' || (p.kategori || 'Umum') === activeCategory;
-        const matchKeyword = !keyword || p.judul.toLowerCase().indexOf(keyword) !== -1 || p.isi_prompt.toLowerCase().indexOf(keyword) !== -1;
+      FILTERED = ALL_PROMPTS.filter(function (p) {
+        const matchCategory = activeCategory === 'Semua' || p.kategori === activeCategory;
+        const matchKeyword = !keyword ||
+          p.judul.toLowerCase().indexOf(keyword) !== -1 ||
+          p.isi_prompt.toLowerCase().indexOf(keyword) !== -1;
         return matchCategory && matchKeyword;
       });
 
       const area = document.getElementById('promptListArea');
-      if (filtered.length === 0) {
-        area.innerHTML = '<div class="empty-state">' + (ALL_PROMPTS.length === 0 ? 'Belum ada prompt yang tersedia untuk produkmu.' : 'Tidak ada prompt yang cocok. Coba kata kunci atau kategori lain.') + '</div>';
+      if (FILTERED.length === 0) {
+        area.innerHTML = '<div class="empty-state">' +
+          (ALL_PROMPTS.length === 0
+            ? 'Belum ada prompt yang tersedia untuk produkmu.'
+            : 'Tidak ada prompt yang cocok. Coba kata kunci atau kategori lain.') +
+          '</div>';
         return;
       }
 
-      area.innerHTML = filtered.map(function (p, idx) {
+      area.innerHTML = FILTERED.map(function (p, idx) {
         const preview = p.isi_prompt.length > 90 ? p.isi_prompt.substring(0, 90) + '...' : p.isi_prompt;
         return (
           '<div class="prompt-item" id="prompt-' + idx + '">' +
           '<div class="prompt-item-head" onclick="toggleOpen(' + idx + ')">' +
           '<div style="flex:1;min-width:0;">' +
-          '<div class="prompt-title">' + p.judul + '</div>' +
-          '<div class="prompt-meta"><span class="chip">' + (p.kategori || 'Umum') + '</span><span class="prompt-produk">' + p.produkNama + '</span></div>' +
-          '<div class="prompt-preview">' + preview + '</div>' +
+          '<div class="prompt-title">' + escapeHtml(p.judul) + '</div>' +
+          '<div class="prompt-meta"><span class="chip">' + escapeHtml(p.kategori) + '</span>' +
+          '<span class="prompt-produk">' + escapeHtml(p.produkNama) + '</span></div>' +
+          '<div class="prompt-preview">' + escapeHtml(preview) + '</div>' +
           '</div><span class="toggle-chevron">▾</span></div>' +
           '<div class="prompt-full">' +
           '<div class="prompt-full-text">' + escapeHtml(p.isi_prompt) + '</div>' +
@@ -135,14 +160,6 @@
           '</div></div>'
         );
       }).join('');
-
-      window._currentFiltered = filtered;
-    }
-
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
     }
 
     function toggleOpen(idx) {
@@ -150,12 +167,19 @@
     }
 
     function copyPrompt(idx, btnEl) {
-      const text = window._currentFiltered[idx].isi_prompt;
+      const item = FILTERED[idx];
+      if (!item) return;
+      const text = item.isi_prompt;
       const done = function () {
-        const original = btnEl.textContent;
+        // FIX: kalau tombol diklik 2x cepat, teks asli dulu ikut tersimpan sebagai
+        // "✓ Tersalin!" dan tidak pernah kembali. Sekarang labelnya konstan.
         btnEl.textContent = '✓ Tersalin!';
         btnEl.classList.add('copied');
-        setTimeout(function () { btnEl.textContent = original; btnEl.classList.remove('copied'); }, 1800);
+        clearTimeout(btnEl._copyTimer);
+        btnEl._copyTimer = setTimeout(function () {
+          btnEl.textContent = '📋 Salin Prompt';
+          btnEl.classList.remove('copied');
+        }, 1800);
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text, done); });
@@ -168,7 +192,7 @@
       const ta = document.createElement('textarea');
       ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
       document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); done(); } catch (err) { alert('Gagal menyalin otomatis, silakan salin manual.'); }
+      try { document.execCommand('copy'); done(); } catch (err) { showToast('Gagal menyalin otomatis, silakan salin manual.'); }
       document.body.removeChild(ta);
     }
   </script>
