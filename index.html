@@ -17,7 +17,7 @@
         <a href="#produk">Produk</a>
         <a href="#alur">Cara Kerja</a>
         <a href="#faq">FAQ</a>
-        <a href="login.html" class="btn btn-outline btn-sm">Masuk Akun</a>
+        <a href="login.html" class="btn btn-outline btn-sm" id="navAuthBtn">Masuk Akun</a>
       </div>
     </div>
   </nav>
@@ -36,7 +36,7 @@
         </p>
         <div class="hero-cta-row">
           <a href="#produk" class="btn btn-primary">Lihat Semua Produk</a>
-          <a href="login.html" class="btn btn-outline">Sudah Punya Akun?</a>
+          <a href="login.html" class="btn btn-outline" id="heroAuthBtn">Sudah Punya Akun?</a>
         </div>
       </div>
 
@@ -95,7 +95,7 @@
         </div>
         <div class="alur-item">
           <div class="alur-num">03</div>
-          <h3>Buat akun & mulai akses</h3>
+          <h3>Buat akun &amp; mulai akses</h3>
           <p>Masukkan kode akses saat mendaftar, dan produkmu langsung terbuka di dashboard.</p>
         </div>
       </div>
@@ -151,33 +151,41 @@
   <script>
     document.getElementById('thisYear').textContent = new Date().getFullYear();
 
-    // Ambil daftar produk dari API (publik, tidak butuh login)
+    // Kalau sudah login, tombol mengarah ke dashboard, bukan halaman login lagi.
+    if (getToken()) {
+      const nav = document.getElementById('navAuthBtn');
+      nav.href = 'dashboard.html'; nav.textContent = 'Buka Dashboard';
+      const hero = document.getElementById('heroAuthBtn');
+      hero.href = 'dashboard.html'; hero.textContent = 'Buka Dashboard';
+    }
+
     async function loadProdukList() {
+      const grid = document.getElementById('produkGrid');
       try {
         const res = await apiGet('getPublicProdukList', {});
-        const grid = document.getElementById('produkGrid');
 
         if (!res.success || !res.data || res.data.length === 0) {
           grid.innerHTML = '<div class="produk-empty">Belum ada produk yang ditambahkan.<br><small>Tambahkan produk lewat Admin Panel.</small></div>';
           return;
         }
 
+        // FIX: nama/deskripsi/thumbnail dulu disisipkan mentah ke HTML.
+        // Satu tanda kutip di nama produk sudah cukup merusak seluruh kartu.
         grid.innerHTML = res.data.map(function (p) {
           const thumb = p.thumbnail
-            ? '<img src="' + p.thumbnail + '" alt="' + p.nama + '">'
-            : (p.kategori || 'PRODUK');
+            ? '<img src="' + escapeAttr(p.thumbnail) + '" alt="' + escapeAttr(p.nama) + '">'
+            : escapeHtml(p.kategori || 'PRODUK');
           return (
             '<div class="produk-card">' +
             '<div class="produk-thumb">' + thumb + '</div>' +
-            '<div class="produk-nama">' + p.nama + '</div>' +
-            '<p class="produk-desc">' + (p.deskripsi || '') + '</p>' +
+            '<div class="produk-nama">' + escapeHtml(p.nama) + '</div>' +
+            '<p class="produk-desc">' + escapeHtml(p.deskripsi || '') + '</p>' +
             '<a href="login.html" class="btn btn-outline btn-sm btn-block">Lihat Detail</a>' +
             '</div>'
           );
         }).join('');
       } catch (err) {
-        document.getElementById('produkGrid').innerHTML =
-          '<div class="produk-empty">Gagal memuat produk. Coba muat ulang halaman.</div>';
+        grid.innerHTML = '<div class="produk-empty">Gagal memuat produk. Coba muat ulang halaman.<br><small>' + escapeHtml(err.message) + '</small></div>';
       }
     }
 
