@@ -37,6 +37,7 @@
     .mark-done-btn.done { background: #ECFDF5; border-color: #A7F3D0; color: var(--success); }
     .mark-done-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
     .mark-done-btn.done .dot { background: var(--success); }
+    .mark-done-btn:disabled { opacity: 0.6; cursor: wait; }
 
     .nav-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .nav-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: block; background: var(--surface); }
@@ -68,14 +69,20 @@
       mountSidebar('produk');
       const params = new URLSearchParams(window.location.search);
       const kontenId = params.get('id');
-      loadVideo(kontenId);
+      if (!kontenId) {
+        document.getElementById('content').innerHTML =
+          '<div class="empty-state">Video tidak ditentukan. <a href="dashboard.html">Kembali ke dashboard</a>.</div>';
+      } else {
+        loadVideo(kontenId);
+      }
     }
 
     async function loadVideo(kontenId) {
       const contentEl = document.getElementById('content');
       try {
         const res = await apiGet('getVideoDetail', { kontenId: kontenId });
-        if (!res.success || !res.data.access) {
+        if (handleSessionExpired(res)) return;
+        if (!res.success || !res.data || !res.data.access) {
           contentEl.innerHTML =
             '<div class="empty-state">' +
             '<h3 style="margin-bottom:8px;">🔒 Kamu tidak memiliki akses ke video ini</h3>' +
@@ -90,67 +97,98 @@
 
         let navHtml = '<div class="nav-row">';
         if (d.prev) {
-          const href = d.prev.tipe === 'video' ? ('video.html?id=' + d.prev.id) : ('produk.html?id=' + d.produkId);
-          navHtml += '<a class="nav-card prev" href="' + href + '"><div class="nav-label">← Sebelumnya</div><div class="nav-title">' + d.prev.judul + '</div></a>';
+          const href = d.prev.tipe === 'video'
+            ? ('video.html?id=' + encodeURIComponent(d.prev.id))
+            : ('produk.html?id=' + encodeURIComponent(d.produkId));
+          navHtml += '<a class="nav-card prev" href="' + href + '"><div class="nav-label">← Sebelumnya</div><div class="nav-title">' + escapeHtml(d.prev.judul) + '</div></a>';
         } else {
           navHtml += '<div class="nav-card disabled"><div class="nav-label">← Sebelumnya</div><div class="nav-title">Tidak ada</div></div>';
         }
         if (d.next) {
-          const href = d.next.tipe === 'video' ? ('video.html?id=' + d.next.id) : ('produk.html?id=' + d.produkId);
-          navHtml += '<a class="nav-card next" href="' + href + '"><div class="nav-label">Berikutnya →</div><div class="nav-title">' + d.next.judul + '</div></a>';
+          const href = d.next.tipe === 'video'
+            ? ('video.html?id=' + encodeURIComponent(d.next.id))
+            : ('produk.html?id=' + encodeURIComponent(d.produkId));
+          navHtml += '<a class="nav-card next" href="' + href + '"><div class="nav-label">Berikutnya →</div><div class="nav-title">' + escapeHtml(d.next.judul) + '</div></a>';
         } else {
           navHtml += '<div class="nav-card disabled next"><div class="nav-label">Berikutnya →</div><div class="nav-title">Tidak ada</div></div>';
         }
         navHtml += '</div>';
 
         contentEl.innerHTML =
-          '<div class="breadcrumb-mini"><a href="produk.html?id=' + d.produkId + '">' + d.produkNama + '</a> / ' + d.modulNama + '</div>' +
-          '<h1 class="video-title">' + d.konten.judul + '</h1>' +
+          '<div class="breadcrumb-mini"><a href="produk.html?id=' + encodeURIComponent(d.produkId) + '">' + escapeHtml(d.produkNama) + '</a> / ' + escapeHtml(d.modulNama) + '</div>' +
+          '<h1 class="video-title">' + escapeHtml(d.konten.judul) + '</h1>' +
           '<div class="video-frame-wrap" id="videoFrameWrap"></div>' +
           '<div class="action-row">' +
           '<button class="mark-done-btn ' + (d.konten.selesai ? 'done' : '') + '" id="markDoneBtn" onclick="toggleSelesai()">' +
           '<span class="dot"></span><span id="markDoneLabel">' + (d.konten.selesai ? 'Sudah Selesai Ditonton' : 'Tandai Sudah Selesai') + '</span>' +
           '</button>' +
-          '<a href="produk.html?id=' + d.produkId + '" class="btn btn-outline btn-sm">Lihat Semua Modul</a>' +
+          '<a href="produk.html?id=' + encodeURIComponent(d.produkId) + '" class="btn btn-outline btn-sm">Lihat Semua Modul</a>' +
           '</div>' +
           navHtml;
 
         renderVideoEmbed(d.konten.url);
 
       } catch (err) {
-        contentEl.innerHTML = '<div class="empty-state">Gagal memuat video. Coba muat ulang halaman.</div>';
+        contentEl.innerHTML = '<div class="empty-state">Gagal memuat video. Coba muat ulang halaman.<br><small>' + escapeHtml(err.message) + '</small></div>';
       }
     }
 
     function renderVideoEmbed(url) {
       const wrap = document.getElementById('videoFrameWrap');
-      if (!wrap || !url) return;
+      if (!wrap) return;
+      if (!url) {
+        wrap.innerHTML = '<div class="video-fallback"><p>Video ini belum punya URL. Hubungi admin.</p></div>';
+        return;
+      }
 
-      const youtubeMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{6,})/);
-      const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+      const youtubeMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{6,})/);
+      const driveMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
+      const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
 
       if (youtubeMatch) {
-        wrap.innerHTML = '<iframe src="https://www.youtube.com/embed/' + youtubeMatch[1] + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+        wrap.innerHTML = '<iframe src="https://www.youtube.com/embed/' + encodeURIComponent(youtubeMatch[1]) + '?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
         return;
       }
       if (driveMatch) {
-        wrap.innerHTML = '<iframe src="https://drive.google.com/file/d/' + driveMatch[1] + '/preview" allow="autoplay" allowfullscreen></iframe>';
+        wrap.innerHTML = '<iframe src="https://drive.google.com/file/d/' + encodeURIComponent(driveMatch[1]) + '/preview" allow="autoplay" allowfullscreen></iframe>';
+        return;
+      }
+      if (vimeoMatch) {
+        wrap.innerHTML = '<iframe src="https://player.vimeo.com/video/' + encodeURIComponent(vimeoMatch[1]) + '" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
         return;
       }
 
-      wrap.innerHTML =
-        '<video controls style="position:absolute;top:0;left:0;width:100%;height:100%;background:#000;"><source src="' + url + '"></video>' +
-        '<div class="video-fallback" style="display:none;" id="videoFallbackMsg">' +
-        '<p>Video tidak bisa diputar langsung di sini.</p>' +
-        '<a href="' + url + '" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Buka Video di Tab Baru</a></div>';
+      // FIX: <source> tanpa handler error tidak memicu event error di <video>.
+      // Sekarang error listener dipasang di <source>, dan fallback dibangun via DOM
+      // (bukan string) supaya URL aneh tidak merusak markup.
+      const video = document.createElement('video');
+      video.controls = true;
+      video.setAttribute('style', 'position:absolute;top:0;left:0;width:100%;height:100%;background:#000;');
+      const source = document.createElement('source');
+      source.src = url;
 
-      const videoEl = wrap.querySelector('video');
-      if (videoEl) {
-        videoEl.addEventListener('error', function () {
-          videoEl.style.display = 'none';
-          document.getElementById('videoFallbackMsg').style.display = 'flex';
-        });
-      }
+      const fallback = document.createElement('div');
+      fallback.className = 'video-fallback';
+      fallback.style.display = 'none';
+      const p = document.createElement('p');
+      p.textContent = 'Video tidak bisa diputar langsung di sini.';
+      const a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.className = 'btn btn-primary btn-sm';
+      a.textContent = 'Buka Video di Tab Baru';
+      fallback.appendChild(p); fallback.appendChild(a);
+
+      const showFallback = function () {
+        video.style.display = 'none';
+        fallback.style.display = 'flex';
+      };
+      source.addEventListener('error', showFallback);
+      video.addEventListener('error', showFallback);
+
+      video.appendChild(source);
+      wrap.innerHTML = '';
+      wrap.appendChild(video);
+      wrap.appendChild(fallback);
     }
 
     async function toggleSelesai() {
@@ -158,6 +196,7 @@
       const label = document.getElementById('markDoneLabel');
       const isNowDone = !btn.classList.contains('done');
 
+      btn.disabled = true;
       btn.classList.toggle('done', isNowDone);
       label.textContent = isNowDone ? 'Sudah Selesai Ditonton' : 'Tandai Sudah Selesai';
       showLoading('Menyimpan progress...');
@@ -165,12 +204,15 @@
       try {
         const res = await apiPost('setKontenProgress', { kontenId: VIDEO_DATA.konten.id, selesai: isNowDone });
         hideLoading();
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message || 'Gagal menyimpan.');
       } catch (err) {
         hideLoading();
         btn.classList.toggle('done', !isNowDone);
         label.textContent = !isNowDone ? 'Sudah Selesai Ditonton' : 'Tandai Sudah Selesai';
-        alert('Gagal menyimpan progress: ' + err.message);
+        showToast('Gagal menyimpan progress: ' + err.message);
+      } finally {
+        btn.disabled = false;
       }
     }
   </script>
