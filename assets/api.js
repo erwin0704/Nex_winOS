@@ -14,7 +14,7 @@
  * ==========================================================
  */
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbyngtoFKpA8-tMkXbXEXlBWmF3tJruQ4WGRu_uL6NG6n87pNP-pN1bOibJtoD_KVoiu/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyX_HRZKGl6FfslYHSeB5SX3rtcFd2r0dVuMaxrU3EAr47OX_U48XcP9vSFZe7HwbMk/exec';
 
 /* ============================================================
    ESCAPING (WAJIB dipakai sebelum menyisipkan data ke HTML)
