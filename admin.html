@@ -9,19 +9,49 @@
   <link rel="stylesheet" href="assets/style.css">
   <style>
     .content-inner { max-width: 1000px; }
-    .admin-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
-    .admin-tab {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 9px 16px; border-radius: 99px; font-size: 13px; font-weight: 600;
-      border: 1px solid var(--border); background: var(--surface); color: var(--ink-soft); cursor: pointer;
-    }
-    .admin-tab svg { width: 15px; height: 15px; }
-    .admin-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .admin-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
     .tab-view { display: none; }
     .tab-view.active { display: block; }
     .breadcrumb { font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; }
     .breadcrumb a { color: var(--accent); cursor: pointer; }
+
+    /* ---- Bar navigasi: tombol kembali (menggantikan deretan tab) ---- */
+    .nav-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; min-height: 34px; }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 99px; font-size: 13px; font-weight: 600;
+      border: 1px solid var(--border); background: var(--surface); color: var(--ink-soft); cursor: pointer;
+    }
+    .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .nav-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+
+    /* ---- Kartu statistik ---- */
+    /* auto-fit: 5 kartu tidak lagi menyisakan satu kartu yatim di baris kedua. */
+    .stat-grid { grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); margin-bottom: 28px; }
+
+    /* ---- Panel ringkasan di beranda ---- */
+    .home-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .home-head h3 { font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .home-head h3 svg { width: 16px; height: 16px; color: var(--ink-soft); }
+    .home-count { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+    .home-foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); text-align: center; }
+    .home-more { font-size: 12px; color: var(--ink-soft); }
+
+    /* ---- Pintu masuk menu yang tidak punya ringkasan ---- */
+    .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .quick-card {
+      display: flex; align-items: center; gap: 14px; text-align: left; width: 100%;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px; cursor: pointer; font-family: inherit;
+    }
+    .quick-card:hover { border-color: var(--accent); }
+    .quick-icon {
+      flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg); color: var(--accent);
+    }
+    .quick-icon svg { width: 18px; height: 18px; }
+    .quick-card b { display: block; font-size: 14px; color: var(--ink); }
+    .quick-card span { font-size: 12px; color: var(--ink-soft); }
   </style>
 </head>
 <body class="app-page">
@@ -31,13 +61,42 @@
       <div class="content-inner">
         <h1 class="page-title">⚙️ Admin Panel</h1>
 
-        <div class="admin-tabs" id="adminTabs"></div>
+        <div class="nav-bar" id="navBar"></div>
 
-        <!-- ========== STATISTIK ========== -->
+        <!-- ========== BERANDA (STATISTIK + RINGKASAN) ========== -->
         <div class="tab-view active" id="tab-statistik">
           <div class="stat-grid" id="statGrid">
             <div class="stat-card"><div class="stat-num">…</div><div class="stat-label">Memuat</div></div>
           </div>
+
+          <div class="panel">
+            <div class="home-head">
+              <h3 id="headUsers">Users</h3>
+              <button class="btn btn-primary btn-sm" onclick="switchAdminTab('users')">Kelola Users</button>
+            </div>
+            <table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody id="homeUsers"></tbody></table>
+            <div class="home-foot" id="footUsers"></div>
+          </div>
+
+          <div class="panel">
+            <div class="home-head">
+              <h3 id="headProduk">Produk</h3>
+              <button class="btn btn-primary btn-sm" onclick="switchAdminTab('produk')">Kelola Produk</button>
+            </div>
+            <table><thead><tr><th>Nama</th><th>Kategori</th></tr></thead><tbody id="homeProduk"></tbody></table>
+            <div class="home-foot" id="footProduk"></div>
+          </div>
+
+          <div class="panel">
+            <div class="home-head">
+              <h3 id="headKode">Kode Akses</h3>
+              <button class="btn btn-primary btn-sm" onclick="switchAdminTab('kodeakses')">Kelola Kode Akses</button>
+            </div>
+            <table><thead><tr><th>Kode</th><th>Produk</th><th>Status</th><th>Dipakai Oleh</th></tr></thead><tbody id="homeKode"></tbody></table>
+            <div class="home-foot" id="footKode"></div>
+          </div>
+
+          <div class="quick-grid" id="quickGrid"></div>
         </div>
 
         <!-- ========== PRODUK & KONTEN ========== -->
@@ -125,34 +184,62 @@
     if (requireAdmin()) {
       try {
         mountSidebar('admin');
-        initAdminTabs();
-        showLoading('Memuat statistik...');
-        loadStatistik();
+        renderQuickGrid();
+        showLoading('Memuat beranda...');
+        loadBeranda();
       } catch (err) {
         console.error('Admin init error:', err);
-        document.getElementById('adminTabs').innerHTML =
-          '<div class="empty-state" style="grid-column:1/-1;border-color:#F0506E;">⚠️ Gagal memuat Admin Panel: ' + escapeHtml(err.message) +
+        document.getElementById('navBar').innerHTML =
+          '<div class="empty-state" style="border-color:#F0506E;">⚠️ Gagal memuat Admin Panel: ' + escapeHtml(err.message) +
           '<br><small>Coba hard refresh (Ctrl+Shift+R). Pastikan file assets/api.js di GitHub sudah versi terbaru.</small></div>';
       }
     }
 
-    function initAdminTabs() {
-      document.getElementById('adminTabs').innerHTML = TABS.map(function (t, i) {
-        return '<button class="admin-tab ' + (i === 0 ? 'active' : '') + '" data-tab="' + t.key + '" onclick="switchAdminTab(\'' + t.key + '\')">' +
-          (ICONS[t.icon] || '') + '<span>' + escapeHtml(t.label) + '</span></button>';
+    function labelTab(key) {
+      const t = TABS.find(function (x) { return x.key === key; });
+      return t ? t.label : key;
+    }
+
+    /**
+     * Menu yang TIDAK punya ringkasan di beranda tetap butuh pintu masuk.
+     * Kalau tidak, menghapus deretan tab akan membuat Prompt Library dan
+     * Update tidak bisa dijangkau sama sekali.
+     */
+    function renderQuickGrid() {
+      const menu = [
+        { key: 'prompt', desc: 'Kelola koleksi prompt tiap produk' },
+        { key: 'update', desc: 'Tulis pengumuman untuk semua member' }
+      ];
+      document.getElementById('quickGrid').innerHTML = menu.map(function (m) {
+        const t = TABS.find(function (x) { return x.key === m.key; });
+        return '<button class="quick-card" onclick="switchAdminTab(\'' + escapeJs(m.key) + '\')">' +
+          '<span class="quick-icon">' + (ICONS[t.icon] || '') + '</span>' +
+          '<span><b>' + escapeHtml(t.label) + '</b><span>' + escapeHtml(m.desc) + '</span></span>' +
+          '</button>';
       }).join('');
     }
 
+    /** Beranda tidak punya tombol kembali; menu lain punya. */
+    function renderNav(tab) {
+      const bar = document.getElementById('navBar');
+      if (tab === 'statistik') { bar.innerHTML = ''; return; }
+      bar.innerHTML =
+        '<button class="back-btn" onclick="switchAdminTab(\'statistik\')">' +
+        '<span aria-hidden="true">←</span><span>Beranda</span></button>' +
+        '<span class="nav-title">' + escapeHtml(labelTab(tab)) + '</span>';
+    }
+
     function switchAdminTab(tab) {
-      document.querySelectorAll('.admin-tab').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === tab); });
       document.querySelectorAll('.tab-view').forEach(function (v) { v.classList.remove('active'); });
       document.getElementById('tab-' + tab).classList.add('active');
+      renderNav(tab);
+      window.scrollTo(0, 0);
       showLoading('Memuat data...');
       loadTab(tab);
     }
 
     function loadTab(tab) {
-      if (tab === 'statistik') loadStatistik();
+      if (tab === 'statistik') loadBeranda();
       if (tab === 'produk') loadProdukList();
       if (tab === 'prompt') loadPromptLibrary();
       if (tab === 'kodeakses') loadKodeAkses();
@@ -183,27 +270,131 @@
       return d.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
-    /* ---------------- STATISTIK ---------------- */
-    async function loadStatistik() {
+    /* ---------------- BERANDA (statistik + ringkasan) ---------------- */
+
+    const PREVIEW_MAX = 5; // baris yang ditampilkan di ringkasan beranda
+
+    /**
+     * Empat request dijalankan BERSAMAAN (Promise.all), bukan berurutan.
+     * Kalau berurutan, beranda menunggu 4x waktu tunggu Apps Script yang
+     * memang lambat — terasa seperti hang.
+     */
+    async function loadBeranda() {
       try {
-        const res = await apiGet('adminGetStatistik', {});
+        const [stat, users, produk, kode] = await Promise.all([
+          apiGet('adminGetStatistik', {}),
+          apiGet('adminGetAllUsers', {}),
+          apiGet('adminGetAllProduk', {}),
+          apiGet('adminGetAllKodeAkses', {})
+        ]);
         hideLoading();
-        if (handleSessionExpired(res)) return;
-        if (!res.success) { showToast('Gagal memuat statistik: ' + res.message); return; }
-        const s = res.data || {};
-        document.getElementById('statGrid').innerHTML =
-          statCard(s.totalUser || 0, 'Total User') +
-          statCard(s.userAktif || 0, 'User Aktif') +
-          statCard(s.totalProduk || 0, 'Total Produk') +
-          statCard((s.kodeTerpakai || 0) + ' / ' + (s.totalKodeAkses || 0), 'Kode Akses Terpakai') +
-          statCard(s.loginMingguIni || 0, 'Login 7 Hari Terakhir');
+
+        if (handleSessionExpired(stat) || handleSessionExpired(users) ||
+            handleSessionExpired(produk) || handleSessionExpired(kode)) return;
+
+        renderStatGrid(stat);
+        renderHomeUsers(users);
+        renderHomeProduk(produk);
+        renderHomeKode(kode);
       } catch (err) {
         hideLoading();
         showToast('Gagal terhubung ke server: ' + err.message);
       }
     }
+
+    function renderStatGrid(res) {
+      if (!res.success) { showToast('Gagal memuat statistik: ' + res.message); return; }
+      const s = res.data || {};
+      document.getElementById('statGrid').innerHTML =
+        statCard(s.totalUser || 0, 'Total User') +
+        statCard(s.userAktif || 0, 'User Aktif') +
+        statCard(s.totalProduk || 0, 'Total Produk') +
+        statCard((s.kodeTerpakai || 0) + ' / ' + (s.totalKodeAkses || 0), 'Kode Terpakai') +
+        statCard(s.loginMingguIni || 0, 'Login 7 Hari');
+    }
+
     function statCard(num, label) {
       return '<div class="stat-card"><div class="stat-num">' + escapeHtml(num) + '</div><div class="stat-label">' + escapeHtml(label) + '</div></div>';
+    }
+
+    /** Judul panel + jumlah total, dan teks "…dan N lainnya" di kaki panel. */
+    function setHomeMeta(headId, footId, judul, total, tampil) {
+      document.getElementById(headId).innerHTML =
+        escapeHtml(judul) + ' <span class="home-count">' + total + '</span>';
+      const sisa = total - tampil;
+      document.getElementById(footId).innerHTML = sisa > 0
+        ? '<span class="home-more">dan ' + sisa + ' lainnya</span>'
+        : '';
+    }
+
+    function emptyRow(kolom, pesan) {
+      return '<tr class="empty-row"><td colspan="' + kolom + '">' + escapeHtml(pesan) + '</td></tr>';
+    }
+
+    function renderHomeUsers(res) {
+      const tbody = document.getElementById('homeUsers');
+      if (!res.success) { tbody.innerHTML = emptyRow(4, 'Gagal memuat: ' + res.message); return; }
+      const list = res.data || [];
+      // User terbaru di atas — yang lama tidak menarik untuk dilihat sekilas.
+      const urut = list.slice().sort(function (a, b) {
+        return new Date(b.tanggal_daftar || 0) - new Date(a.tanggal_daftar || 0);
+      }).slice(0, PREVIEW_MAX);
+
+      setHomeMeta('headUsers', 'footUsers', 'Users', list.length, urut.length);
+      tbody.innerHTML = urut.length === 0
+        ? emptyRow(4, 'Belum ada user.')
+        : urut.map(function (u) {
+            const status = u.status === 'aktif'
+              ? '<span class="badge aktif">Aktif</span>'
+              : '<span class="badge nonaktif">Nonaktif</span>';
+            const role = u.role === 'admin' ? '<span class="badge admin">Admin</span>' : 'Member';
+            return '<tr><td>' + escapeHtml(u.nama) + '</td><td>' + escapeHtml(u.email) + '</td>' +
+              '<td>' + role + '</td><td>' + status + '</td></tr>';
+          }).join('');
+    }
+
+    function renderHomeProduk(res) {
+      const tbody = document.getElementById('homeProduk');
+      if (!res.success) { tbody.innerHTML = emptyRow(2, 'Gagal memuat: ' + res.message); return; }
+      const list = res.data || [];
+      // Sekalian isi cache nama produk — dipakai tabel kode akses di bawah.
+      list.forEach(function (p) { PRODUK_NAMA[p.id] = p.nama; });
+
+      const tampil = list.slice(0, PREVIEW_MAX);
+      setHomeMeta('headProduk', 'footProduk', 'Produk', list.length, tampil.length);
+      tbody.innerHTML = tampil.length === 0
+        ? emptyRow(2, 'Belum ada produk.')
+        : tampil.map(function (p) {
+            return '<tr><td>' + escapeHtml(p.nama) + '</td><td>' + escapeHtml(p.kategori || '-') + '</td></tr>';
+          }).join('');
+    }
+
+    function renderHomeKode(res) {
+      const tbody = document.getElementById('homeKode');
+      if (!res.success) { tbody.innerHTML = emptyRow(4, 'Gagal memuat: ' + res.message); return; }
+      const list = res.data || [];
+
+      // Kode yang MASIH TERSEDIA didahulukan — itu yang biasanya dicari admin
+      // saat mau membagikan akses ke pembeli baru.
+      const terpakai = function (k) {
+        return k.status_pakai === true || k.status_pakai === 'TRUE' || k.status_pakai === 'terpakai';
+      };
+      const urut = list.slice().sort(function (a, b) {
+        return (terpakai(a) ? 1 : 0) - (terpakai(b) ? 1 : 0);
+      }).slice(0, PREVIEW_MAX);
+
+      setHomeMeta('headKode', 'footKode', 'Kode Akses', list.length, urut.length);
+      tbody.innerHTML = urut.length === 0
+        ? emptyRow(4, 'Belum ada kode akses.')
+        : urut.map(function (k) {
+            const status = terpakai(k)
+              ? '<span class="badge nonaktif">Terpakai</span>'
+              : '<span class="badge aktif">Tersedia</span>';
+            return '<tr><td class="code-mono">' + escapeHtml(k.kode) + '</td>' +
+              '<td>' + escapeHtml(namaProduk(k.produk_id)) + '</td>' +
+              '<td>' + status + '</td>' +
+              '<td>' + escapeHtml(k.dipakai_oleh || '-') + '</td></tr>';
+          }).join('');
     }
 
     /* ---------------- PRODUK, MODUL, KONTEN ---------------- */
