@@ -85,6 +85,18 @@
     .growth-empty { font-size: 13px; color: var(--ink-soft); text-align: center; padding: 30px 0; }
     .growth-bar-label { font-size: 11px; fill: var(--ink-soft); font-family: var(--font-body); }
     .growth-bar-count { font-size: 11px; fill: var(--ink); font-family: var(--font-body); font-weight: 700; }
+
+    /* FIX: kotak cari (170px) + dropdown urutkan di layar HP sempit (~320-360px)
+       menyisakan sedikit ruang dan terlihat sesak berdampingan dengan judul
+       panel. Di layar sempit keduanya dibuat selebar penuh, bertumpuk rapi. */
+    @media (max-width: 480px) {
+      .toolbar-controls { width: 100%; }
+      .toolbar-input, .toolbar-select { flex: 1 1 100%; min-width: 0; }
+      .home-head-right { width: 100%; }
+      .home-search-wrap { flex: 1 1 auto; }
+      .home-search-input, .home-search-input:focus { width: 100%; }
+      .home-head-right .btn { width: 100%; }
+    }
   </style>
 </head>
 <body class="app-page">
@@ -762,7 +774,7 @@
       const lebarBar = Math.min(56, (lebar / keys.length) - 14);
       const jarak = lebar / keys.length;
 
-      let svg = '<svg viewBox="0 0 ' + lebar + ' ' + tinggi + '" style="width:100%;height:auto;" role="img" aria-label="Grafik pertumbuhan user per bulan">';
+      let svg = '<svg viewBox="0 0 ' + lebar + ' ' + tinggi + '" style="width:100%;min-width:480px;height:auto;display:block;" role="img" aria-label="Grafik pertumbuhan user per bulan">';
       keys.forEach(function (k, i) {
         const v = bucket[k];
         const tinggiBar = maks > 0 ? ((v / maks) * (tinggi - padBawah - padAtas)) : 0;

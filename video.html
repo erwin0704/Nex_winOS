@@ -46,6 +46,14 @@
     .nav-card .nav-title { font-size: 14px; font-weight: 600; }
     .nav-card.next { text-align: right; }
     .nav-card.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* FIX: dua kartu prev/next berdampingan di layar HP sempit membuat judul
+       konten terpotong/sesak. Ditumpuk 1 kolom; kartu "next" balik rata kiri
+       supaya tidak aneh saat sendirian di barisnya sendiri. */
+    @media (max-width: 480px) {
+      .nav-row { grid-template-columns: 1fr; }
+      .nav-card.next { text-align: left; }
+    }
   </style>
 </head>
 <body class="app-page">

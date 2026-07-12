@@ -195,7 +195,7 @@ section { padding: 64px 0; }
 .cta-final h2 { color: #fff; }
 .cta-final p { color: #C8C9D3; }
 
-footer { border-top: 1px solid var(--border); padding: 32px 0; font-size: 13px; color: var(--ink-soft); display: flex; justify-content: space-between; align-items: center; }
+footer { border-top: 1px solid var(--border); padding: 32px 0; font-size: 13px; color: var(--ink-soft); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 
 /* ---------- Auth pages ---------- */
 .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
@@ -473,6 +473,16 @@ body.app-page { background: var(--bg-gradient); }
 @media (max-width: 640px) {
   .form-row { grid-template-columns: 1fr; }
 }
+
+/* FIX: tabel admin (Users s/d 7 kolom, Kode Akses 6 kolom) di layar HP dulu
+   dipaksa menyempit sampai teksnya patah acak/tumpang tindih. Sekarang di
+   layar sempit tabelnya digulir horizontal DI DALAM panel — sisa halaman
+   (form, tombol, dst) tetap rapi, tidak ikut lebar. */
+@media (max-width: 760px) {
+  .panel { overflow-x: auto; }
+  .panel table { min-width: 560px; }
+}
+
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); padding: 8px 10px; border-bottom: 1px solid var(--border); }
 td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -632,24 +642,73 @@ tr:last-child td { border-bottom: none; }
 
 .greeting-right { display: flex; align-items: center; gap: 12px; }
 
+/* Dropdown notifikasi di dashboard. FIX: sebelumnya ditulis inline
+   (width:300px; right:0) langsung di HTML — di layar HP sempit, dropdown
+   selebar itu meluber ke luar tepi layar dan sebagian tak terklik/terlihat. */
+.dash-notif-dropdown {
+  position: absolute; right: 0; top: 52px; width: 300px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow); padding: 10px; z-index: 40; max-height: 360px; overflow-y: auto;
+}
+@media (max-width: 480px) {
+  /* position:fixed melepaskan dropdown dari konteks kanan-atas yang sempit,
+     supaya lebarnya bisa mengikuti layar alih-alih container kecilnya. */
+  .dash-notif-dropdown { position: fixed; left: 16px; right: 16px; top: 66px; width: auto; }
+  .greeting-right { flex-wrap: wrap; width: 100%; }
+  .search-bar { min-width: 0; flex: 1 1 160px; }
+}
+
 @media (max-width: 860px) {
   .hero-grid { grid-template-columns: 1fr; }
   .hero h1 { font-size: 34px; }
   .produk-grid { grid-template-columns: repeat(2, 1fr); }
   .alur-grid { grid-template-columns: 1fr; }
   .file-stack { display: none; }
-  .nav-links { display: none; }
+  /* FIX: dulu SELURUH .nav-links disembunyikan (display:none), termasuk
+     tombol "Masuk Akun" yang ada di dalamnya — jadi navbar di HP cuma
+     menyisakan nama brand tanpa jalan masuk ke login. Sekarang hanya link
+     Produk/Cara Kerja/FAQ yang disembunyikan; tombol Masuk Akun tetap tampil. */
+  .nav-links a:not(#navAuthBtn) { display: none; }
   .app-shell { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; align-items: center; overflow-x: auto; }
+  .sidebar {
+    width: 100%; height: auto; position: sticky; top: 0; z-index: 40;
+    flex-direction: row; align-items: center; overflow-x: auto; padding: 10px 14px;
+  }
   .sidebar-nav { flex-direction: row; flex: none; }
   .sidebar-divider { display: none; }
-  .sidebar-user { display: none; }
   .sidebar-brand { display: none; }
-  .main { padding: 20px; }
+  /* FIX: dulu .sidebar-user disembunyikan total (display:none) di HP — akibatnya
+     popup profil, ganti password, ganti tema, dan tombol keluar TIDAK BISA
+     dijangkau sama sekali dari HP. Sekarang avatar tetap tampil & bisa diklik
+     di ujung kanan bar, cuma nama/role di sampingnya yang disembunyikan
+     supaya bar tetap ringkas. */
+  .sidebar-user {
+    width: auto; flex-shrink: 0; border: none; padding: 6px; margin-left: auto;
+  }
+  .sidebar-user > div:not(.avatar) { display: none; }
+  .main { padding: 16px; }
   .produk-owned-grid, .info-grid, .stat-grid, .form-row { grid-template-columns: 1fr; }
 }
-@media (max-width: 560px) {
+@media (max-width: 480px) {
   .produk-grid { grid-template-columns: 1fr; }
+}
+
+/* Penyesuaian umum untuk layar HP sangat sempit (≤480px) — di luar area
+   sidebar/tabel yang sudah ditangani khusus di atas. */
+@media (max-width: 480px) {
+  .auth-wrap { padding: 16px; }
+  .auth-card { padding: 24px 20px; }
+  .cta-final { padding: 32px 20px; border-radius: 16px; }
+  .cta-final h2 { font-size: 22px; }
+  section { padding: 40px 0; }
+  .section-head h2 { font-size: 24px; }
+  .page-title { font-size: 20px; }
+  /* Divider vertikal di overview-card cuma masuk akal saat sejajar; begitu
+     kartu ini melebar penuh & pecah ke bawah, garis setinggi-elemen jadi
+     terlihat aneh menggantung sendirian. */
+  .overview-divider { display: none; }
+  .overview-card { padding: 20px; }
+  .cta-final .btn { width: 100%; }
 }
 
 /* ---------- Popup Profil ---------- */
