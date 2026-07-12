@@ -25,10 +25,6 @@
           </div>
         </div>
           <div class="greeting-right">
-            <div class="search-bar">
-              <span class="ic"></span>
-              <input type="text" id="searchProduk" placeholder="Cari produk kamu..." oninput="filterProduk()">
-            </div>
             <div style="position:relative;">
               <button id="notifBtn" onclick="toggleNotifDropdown(event)" class="notif-bell-btn">
                 <span id="notifIcon"></span>
@@ -60,12 +56,6 @@
           <div class="num" id="ovKontenSelesai">0</div>
           <div class="lbl">Konten Selesai Ditonton/Dibaca</div>
         </div>
-      </div>
-
-      <div class="section-title" id="produk-saya"><span class="section-ic" data-ic="box"></span>Produk Anda</div>
-      <div class="produk-owned-grid" id="produkGrid">
-        <div class="skeleton-card"><div class="skeleton-line w60"></div><div class="skeleton-line bar"></div><div class="skeleton-line w40"></div></div>
-        <div class="skeleton-card"><div class="skeleton-line w60"></div><div class="skeleton-line bar"></div><div class="skeleton-line w40"></div></div>
       </div>
 
       <div id="continueLearningArea"></div>
@@ -121,7 +111,6 @@
         ALL_PRODUK = (res.data && res.data.myProducts) || [];
         ALL_UPDATES = (res.data && res.data.updates) || [];
         renderOverview(ALL_PRODUK);
-        renderProduk(ALL_PRODUK);
         renderContinueLearning(res.data.continueLearning);
         renderUpdates(ALL_UPDATES);
       } catch (err) {
@@ -146,41 +135,19 @@
       document.getElementById('ovRingWrap').innerHTML = progressRingSVG(rataProgress, '');
     }
 
-    function renderProduk(list) {
-      const grid = document.getElementById('produkGrid');
-      if (list.length === 0) {
-        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">' +
-          'Kamu belum memiliki produk apa pun.<br>' +
-          '<small>Kalau kamu sudah membeli, pastikan proses "Buat Akun" dengan kode akses sudah benar.</small></div>';
-        return;
-      }
-      // FIX: nama produk sekarang di-escape (dulu tanda kutip/HTML di nama bisa
-      // merusak atribut data-nama dan menyuntik markup).
-      grid.innerHTML = list.map(function (p) {
-        return (
-          '<a href="produk.html?id=' + encodeURIComponent(p.id) + '" class="produk-owned-card" data-nama="' + escapeAttr(String(p.nama).toLowerCase()) + '">' +
-          '<div class="produk-owned-top">' +
-          '<div class="produk-owned-nama">' + escapeHtml(p.nama) + '</div>' +
-          (p.expired ? '<span class="badge-expired">Kedaluwarsa</span>' : '') +
-          '</div>' +
-          '<div class="progress-bar-track"><div class="progress-bar-fill" style="width:' + (p.progressPercent || 0) + '%;"></div></div>' +
-          '<div class="progress-label"><span>Progress ' + (p.progressPercent || 0) + '%</span><span>' + p.selesaiKonten + '/' + p.totalKonten + ' selesai</span></div>' +
-          '</a>'
-        );
-      }).join('');
-    }
-
-    function filterProduk() {
-      const keyword = document.getElementById('searchProduk').value.toLowerCase();
-      document.querySelectorAll('#produkGrid .produk-owned-card').forEach(function (card) {
-        const match = card.dataset.nama.indexOf(keyword) !== -1;
-        card.style.display = match ? 'block' : 'none';
-      });
-    }
-
     function renderContinueLearning(cl) {
       const area = document.getElementById('continueLearningArea');
-      if (!cl) { area.innerHTML = ''; return; }
+      // FIX: dulu pesan "Kamu belum memiliki produk apa pun" ada di kartu
+      // "Produk Anda" yang sekarang dihapus (redundan dengan bagian ini).
+      // Supaya user yang belum punya produk sama sekali tidak melihat halaman
+      // kosong tanpa penjelasan, pesannya dipindah ke sini.
+      if (!cl) {
+        area.innerHTML = ALL_PRODUK.length === 0
+          ? '<div class="empty-state">Kamu belum memiliki produk apa pun.<br>' +
+            '<small>Kalau kamu sudah membeli, pastikan proses "Buat Akun" dengan kode akses sudah benar.</small></div>'
+          : '';
+        return;
+      }
 
       const iconFor = function (tipe) {
         return tipe === 'video' ? ICONS.play : (tipe === 'pdf' ? ICONS.fileText : (tipe === 'prompt' ? ICONS.list : ICONS.download));
