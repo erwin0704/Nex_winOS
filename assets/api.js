@@ -397,7 +397,7 @@ function mountSidebar(activeKey) {
   mountEl.outerHTML =
     '<aside class="sidebar ' + (collapsed ? 'collapsed' : '') + '" id="mainSidebar">' +
     '<div class="sidebar-top">' +
-    '<button class="mobile-nav-toggle" id="mobileNavToggle" onclick="toggleMobileNav()" aria-label="Buka menu" aria-expanded="false">' + ICONS.menu + '</button>' +
+    '<button class="mobile-nav-toggle" id="mobileNavToggle" onclick="toggleMobileNav(event)" aria-label="Buka menu" aria-expanded="false">' + ICONS.menu + '</button>' +
     '<div class="sidebar-brand">Studio Kamu<span style="color:var(--accent)">.</span></div>' +
     '<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Sembunyikan/tampilkan menu">' + ICONS.chevronLeft + '</button>' +
     '</div>' +
@@ -652,8 +652,17 @@ function toggleSidebar() {
  * BARU: menu navigasi di HP (Dashboard/Prompt Library/Admin Panel) — dulu
  * berupa deretan pil horizontal yang saling berdesakan dan teksnya
  * terpotong. Sekarang disembunyikan sebagai dropdown, dibuka lewat tombol ☰.
+ *
+ * FIX: fungsi ini mengganti ikon di dalam tombol (btn.innerHTML). Kalau klik
+ * mendarat persis di elemen SVG ikon, penggantian itu melepas SVG tersebut
+ * dari DOM DI TENGAH proses klik — sehingga listener "tutup kalau klik di
+ * luar" di bawah salah mengira klik ini terjadi di luar tombol (closest()
+ * pada elemen yang sudah lepas dari DOM tidak menemukan induk apa pun), dan
+ * langsung menutup dropdown yang baru saja dibuka. stopPropagation() di sini
+ * mencegah klik ini diteruskan ke listener global sama sekali.
  */
-function toggleMobileNav() {
+function toggleMobileNav(e) {
+  if (e) e.stopPropagation();
   const el = document.getElementById('mainSidebar');
   const btn = document.getElementById('mobileNavToggle');
   if (!el || !btn) return;
