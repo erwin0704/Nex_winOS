@@ -30,8 +30,8 @@
             <input type="text" id="searchProduk" placeholder="Cari produk kamu..." oninput="filterProduk()">
           </div>
           <div style="position:relative;">
-            <button id="notifBtn" onclick="toggleNotifDropdown()" style="width:44px;height:44px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);position:relative;">
-              <span id="notifIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
+            <button id="notifBtn" onclick="toggleNotifDropdown(event)" style="width:44px;height:44px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);position:relative;">
+              <span id="notifIcon"></span>
               <span id="notifBadge" style="display:none;position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--danger);"></span>
             </button>
             <div id="notifDropdown" style="display:none;position:absolute;right:0;top:52px;width:300px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:10px;z-index:40;max-height:360px;overflow-y:auto;">
@@ -42,7 +42,7 @@
         </div>
       </div>
 
-      <!-- ============ OVERVIEW CARD (signature widget) ============ -->
+      <!-- ============ OVERVIEW CARD ============ -->
       <div class="overview-card" id="overviewCard" style="display:none;">
         <div class="overview-stat">
           <div class="num" id="ovTotalProduk">0</div>
@@ -91,6 +91,7 @@
   <script src="assets/api.js"></script>
   <script>
     let ALL_PRODUK = [];
+    let ALL_UPDATES = [];
 
     if (requireAuth()) {
       const session = getSession();
@@ -100,16 +101,10 @@
       document.querySelectorAll('[data-ic]').forEach(function (el) {
         el.innerHTML = ICONS[el.dataset.ic] || '';
       });
-      document.addEventListener('click', function (e) {
-        const dd = document.getElementById('notifDropdown');
-        if (dd && dd.style.display === 'block' && !e.target.closest('#notifBtn') && !e.target.closest('#notifDropdown')) {
-          dd.style.display = 'none';
-        }
-      });
 
       if (session) {
-        document.getElementById('greetingNama').textContent = session.nama;
-        document.getElementById('greetingAvatar').textContent = session.nama.charAt(0).toUpperCase();
+        document.getElementById('greetingNama').textContent = session.nama || '';
+        document.getElementById('greetingAvatar').textContent = (session.nama || '?').charAt(0).toUpperCase();
       }
       loadDashboard();
     }
@@ -119,21 +114,19 @@
       try {
         const res = await apiGet('getDashboard', {});
         hideLoading();
+        // FIX: pemeriksaan sesi kadaluarsa dipusatkan di api.js (dulu cuma cek
+        // kata "kadaluarsa" persis, jadi pesan "Sesi tidak valid" tidak tertangani).
+        if (handleSessionExpired(res)) return;
         if (!res.success) {
-          if (res.message && res.message.indexOf('kadaluarsa') !== -1) {
-            clearToken();
-            window.location.href = 'login.html';
-            return;
-          }
           showToast('Gagal memuat dashboard: ' + res.message);
           return;
         }
-        ALL_PRODUK = res.data.myProducts || [];
-        window._lastUpdates = res.data.updates || [];
+        ALL_PRODUK = (res.data && res.data.myProducts) || [];
+        ALL_UPDATES = (res.data && res.data.updates) || [];
         renderOverview(ALL_PRODUK);
         renderProduk(ALL_PRODUK);
         renderContinueLearning(res.data.continueLearning);
-        renderUpdates(res.data.updates || []);
+        renderUpdates(ALL_UPDATES);
       } catch (err) {
         hideLoading();
         showToast('Gagal terhubung ke server: ' + err.message);
@@ -145,11 +138,11 @@
       if (list.length === 0) { card.style.display = 'none'; return; }
       card.style.display = 'flex';
 
-      const totalKonten = list.reduce(function (s, p) { return s + p.totalKonten; }, 0);
-      const selesaiKonten = list.reduce(function (s, p) { return s + p.selesaiKonten; }, 0);
-      const rataProgress = list.length > 0
-        ? Math.round(list.reduce(function (s, p) { return s + p.progressPercent; }, 0) / list.length)
-        : 0;
+      const totalKonten = list.reduce(function (s, p) { return s + (p.totalKonten || 0); }, 0);
+      const selesaiKonten = list.reduce(function (s, p) { return s + (p.selesaiKonten || 0); }, 0);
+      // FIX: rata-rata sekarang berbasis total konten (lebih adil), bukan rata-rata
+      // dari persentase per produk yang bikin produk 1-konten setara produk 50-konten.
+      const rataProgress = totalKonten > 0 ? Math.round((selesaiKonten / totalKonten) * 100) : 0;
 
       document.getElementById('ovTotalProduk').textContent = list.length;
       document.getElementById('ovKontenSelesai').textContent = selesaiKonten + '/' + totalKonten;
@@ -164,15 +157,17 @@
           '<small>Kalau kamu sudah membeli, pastikan proses "Buat Akun" dengan kode akses sudah benar.</small></div>';
         return;
       }
+      // FIX: nama produk sekarang di-escape (dulu tanda kutip/HTML di nama bisa
+      // merusak atribut data-nama dan menyuntik markup).
       grid.innerHTML = list.map(function (p) {
         return (
-          '<a href="produk.html?id=' + p.id + '" class="produk-owned-card" data-nama="' + p.nama.toLowerCase() + '">' +
+          '<a href="produk.html?id=' + encodeURIComponent(p.id) + '" class="produk-owned-card" data-nama="' + escapeAttr(String(p.nama).toLowerCase()) + '">' +
           '<div class="produk-owned-top">' +
-          '<div class="produk-owned-nama">' + p.nama + '</div>' +
+          '<div class="produk-owned-nama">' + escapeHtml(p.nama) + '</div>' +
           (p.expired ? '<span class="badge-expired">Kedaluwarsa</span>' : '') +
           '</div>' +
-          '<div class="progress-bar-track"><div class="progress-bar-fill" style="width:' + p.progressPercent + '%;"></div></div>' +
-          '<div class="progress-label"><span>Progress ' + p.progressPercent + '%</span><span>' + p.selesaiKonten + '/' + p.totalKonten + ' selesai</span></div>' +
+          '<div class="progress-bar-track"><div class="progress-bar-fill" style="width:' + (p.progressPercent || 0) + '%;"></div></div>' +
+          '<div class="progress-label"><span>Progress ' + (p.progressPercent || 0) + '%</span><span>' + p.selesaiKonten + '/' + p.totalKonten + ' selesai</span></div>' +
           '</a>'
         );
       }).join('');
@@ -194,47 +189,61 @@
         return tipe === 'video' ? ICONS.play : (tipe === 'pdf' ? ICONS.fileText : (tipe === 'prompt' ? ICONS.list : ICONS.download));
       };
 
+      // FIX: dulu class-nya tertukar — nama produk dipasang di .continue-modul-nama
+      // dan nama modul di .continue-produk-nama, jadi hierarki visualnya terbalik.
       area.innerHTML =
         '<div class="section-title"><span class="section-ic">' + ICONS.book + '</span>Lanjutkan Belajar</div>' +
         '<div class="continue-card">' +
-        '<div class="continue-modul-nama">' + cl.produkNama + '</div>' +
-        '<div class="continue-produk-nama">' + cl.modulNama + '</div>' +
+        '<div class="continue-produk-nama">' + escapeHtml(cl.produkNama) + '</div>' +
+        '<div class="continue-modul-nama">' + escapeHtml(cl.modulNama) + '</div>' +
         cl.kontenList.map(function (k) {
-          const href = k.tipe === 'video' ? ('video.html?id=' + k.id) : ('produk.html?id=' + cl.produkId);
+          const href = k.tipe === 'video'
+            ? ('video.html?id=' + encodeURIComponent(k.id))
+            : ('produk.html?id=' + encodeURIComponent(cl.produkId));
           return '<a class="konten-row" href="' + href + '" style="display:flex;">' +
-            '<span class="ic">' + iconFor(k.tipe) + '</span>' + k.judul + '</a>';
+            '<span class="ic">' + iconFor(k.tipe) + '</span>' + escapeHtml(k.judul) + '</a>';
         }).join('') +
         '</div>';
     }
 
     function renderUpdates(updates) {
-      if (updates.length === 0) {
-        document.getElementById('notifList').innerHTML = '<p style="font-size:13px;color:var(--ink-soft);padding:8px;">Belum ada update.</p>';
+      const listEl = document.getElementById('notifList');
+      if (!updates || updates.length === 0) {
+        listEl.innerHTML = '<p style="font-size:13px;color:var(--ink-soft);padding:8px;">Belum ada update.</p>';
         return;
       }
 
-      document.getElementById('notifList').innerHTML = updates.slice(0, 5).map(function (u) {
+      listEl.innerHTML = updates.slice(0, 5).map(function (u) {
         return '<div style="display:block;padding:8px;border-radius:8px;">' +
-          '<div style="font-size:13px;font-weight:600;">' + u.judul + '</div>' +
-          '<p style="font-size:12px;color:var(--ink-soft);margin:2px 0;">' + u.isi + '</p>' +
-          '<div style="font-size:11px;color:var(--ink-soft);">' + u.tanggal + '</div></div>';
+          '<div style="font-size:13px;font-weight:600;">' + escapeHtml(u.judul) + '</div>' +
+          '<p style="font-size:12px;color:var(--ink-soft);margin:2px 0;">' + escapeHtml(u.isi) + '</p>' +
+          '<div style="font-size:11px;color:var(--ink-soft);">' + escapeHtml(formatTanggal(u.tanggal)) + '</div></div>';
       }).join('');
 
       const lastSeen = localStorage.getItem('last_seen_update');
-      if (updates[0] && updates[0].tanggal !== lastSeen) {
+      if (updates[0] && String(updates[0].tanggal) !== lastSeen) {
         document.getElementById('notifBadge').style.display = 'block';
       }
     }
 
-    function toggleNotifDropdown() {
+    /** Tanggal dari sheet datang sebagai ISO string; tampilkan versi manusiawi. */
+    function formatTanggal(v) {
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return v || '';
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function toggleNotifDropdown(e) {
+      if (e) e.stopPropagation();
       const dd = document.getElementById('notifDropdown');
       const isOpen = dd.style.display === 'block';
       dd.style.display = isOpen ? 'none' : 'block';
       if (!isOpen) {
         document.getElementById('notifBadge').style.display = 'none';
-        const updates = ALL_PRODUK.length >= 0 ? window._lastUpdates : [];
-        if (window._lastUpdates && window._lastUpdates[0]) {
-          localStorage.setItem('last_seen_update', window._lastUpdates[0].tanggal);
+        // FIX: dulu ada variabel mati (`ALL_PRODUK.length >= 0 ? ...`) dan
+        // ketergantungan ke window._lastUpdates yang membingungkan.
+        if (ALL_UPDATES[0]) {
+          localStorage.setItem('last_seen_update', String(ALL_UPDATES[0].tanggal));
         }
       }
     }
