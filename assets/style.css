@@ -403,6 +403,58 @@ body.app-page { background: var(--bg-gradient); }
 .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
 .form-row.single { grid-template-columns: 1fr; }
 .form-row label { font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px; }
+
+/* FIX: input di dalam .form-row (semua form Admin Panel) tidak pernah
+   di-style — CSS hanya menargetkan `.field input`, padahal admin.html
+   memakai struktur `.form-row`. Akibatnya semua kotak isian tampil polos
+   dengan gaya bawaan browser. Aturan di bawah menyamakannya dengan `.field`. */
+.form-row input,
+.form-row select,
+.form-row textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--bg);
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.form-row input::placeholder,
+.form-row textarea::placeholder { color: var(--ink-soft); }
+
+.form-row input:hover,
+.form-row select:hover,
+.form-row textarea:hover { border-color: var(--ink-soft); }
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.10);
+}
+
+.form-row textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
+
+/* Select bawaan tampil beda di tiap OS — disamakan, panah digambar sendiri. */
+.form-row select {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+  cursor: pointer;
+}
+
+/* Tombol aksi form butuh jarak dari input di atasnya. */
+.panel .form-row + .btn { margin-top: 4px; }
+
+@media (max-width: 640px) {
+  .form-row { grid-template-columns: 1fr; }
+}
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); padding: 8px 10px; border-bottom: 1px solid var(--border); }
 td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
