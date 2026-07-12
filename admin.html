@@ -36,22 +36,21 @@
     .home-foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); text-align: center; }
     .home-more { font-size: 12px; color: var(--ink-soft); }
 
-    /* ---- Pintu masuk menu yang tidak punya ringkasan ---- */
-    .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-    .quick-card {
-      display: flex; align-items: center; gap: 14px; text-align: left; width: 100%;
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 18px; cursor: pointer; font-family: inherit;
+    /* ---- Toolbar sort & filter di kepala tiap panel ---- */
+    .panel-head { flex-wrap: wrap; gap: 10px; }
+    .toolbar-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .toolbar-input, .toolbar-select {
+      padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-family: var(--font-body); background: var(--bg); color: var(--ink);
     }
-    .quick-card:hover { border-color: var(--accent); }
-    .quick-icon {
-      flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--bg); color: var(--accent);
-    }
-    .quick-icon svg { width: 18px; height: 18px; }
-    .quick-card b { display: block; font-size: 14px; color: var(--ink); }
-    .quick-card span { font-size: 12px; color: var(--ink-soft); }
+    .toolbar-input { min-width: 170px; }
+    .toolbar-input:focus, .toolbar-select:focus { border-color: var(--accent); outline: none; background: var(--surface); }
+    .toolbar-select { cursor: pointer; }
+
+    /* ---- Grafik pertumbuhan user ---- */
+    .growth-empty { font-size: 13px; color: var(--ink-soft); text-align: center; padding: 30px 0; }
+    .growth-bar-label { font-size: 11px; fill: var(--ink-soft); font-family: var(--font-body); }
+    .growth-bar-count { font-size: 11px; fill: var(--ink); font-family: var(--font-body); font-weight: 700; }
   </style>
 </head>
 <body class="app-page">
@@ -67,6 +66,11 @@
         <div class="tab-view active" id="tab-statistik">
           <div class="stat-grid" id="statGrid">
             <div class="stat-card"><div class="stat-num">…</div><div class="stat-label">Memuat</div></div>
+          </div>
+
+          <div class="panel" id="growthPanel">
+            <div class="panel-head"><h3>Pertumbuhan User</h3></div>
+            <div id="growthChart"><div class="growth-empty">Memuat grafik…</div></div>
           </div>
 
           <div class="panel">
@@ -96,7 +100,23 @@
             <div class="home-foot" id="footKode"></div>
           </div>
 
-          <div class="quick-grid" id="quickGrid"></div>
+          <div class="panel">
+            <div class="home-head">
+              <h3 id="headPrompt">Prompt Library</h3>
+              <button class="btn btn-primary btn-sm" onclick="switchAdminTab('prompt')">Kelola Prompt</button>
+            </div>
+            <table><thead><tr><th>Judul</th><th>Kategori</th><th>Produk</th></tr></thead><tbody id="homePrompt"></tbody></table>
+            <div class="home-foot" id="footPrompt"></div>
+          </div>
+
+          <div class="panel">
+            <div class="home-head">
+              <h3 id="headUpdate">Update</h3>
+              <button class="btn btn-primary btn-sm" onclick="switchAdminTab('update')">Kelola Update</button>
+            </div>
+            <table><thead><tr><th>Judul</th><th>Tanggal</th></tr></thead><tbody id="homeUpdate"></tbody></table>
+            <div class="home-foot" id="footUpdate"></div>
+          </div>
         </div>
 
         <!-- ========== PRODUK & KONTEN ========== -->
@@ -118,7 +138,7 @@
             <button class="btn btn-primary btn-sm" onclick="createPrompt()">Tambah Prompt</button>
           </div>
           <div class="panel">
-            <div class="panel-head"><h3>Daftar Prompt</h3></div>
+            <div class="panel-head" id="promptToolbar"><h3>Daftar Prompt</h3></div>
             <table><thead><tr><th>Judul</th><th>Kategori</th><th>Produk</th><th></th></tr></thead><tbody id="promptTable"></tbody></table>
           </div>
         </div>
@@ -134,7 +154,7 @@
             <button class="btn btn-primary btn-sm" onclick="generateKode()">Generate Kode</button>
           </div>
           <div class="panel">
-            <div class="panel-head"><h3>Daftar Kode Akses</h3></div>
+            <div class="panel-head" id="kodeAksesToolbar"><h3>Daftar Kode Akses</h3></div>
             <table><thead><tr><th>Kode</th><th>Produk</th><th>Status</th><th>Dipakai Oleh</th><th></th></tr></thead><tbody id="kodeAksesTable"></tbody></table>
           </div>
         </div>
@@ -142,6 +162,7 @@
         <!-- ========== USERS ========== -->
         <div class="tab-view" id="tab-users">
           <div class="panel">
+            <div class="panel-head" id="usersToolbar"></div>
             <table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Status</th><th>Terakhir Login</th><th></th></tr></thead><tbody id="usersTable"></tbody></table>
           </div>
         </div>
@@ -155,7 +176,7 @@
             <button class="btn btn-primary btn-sm" onclick="createUpdate()">Publikasikan</button>
           </div>
           <div class="panel">
-            <div class="panel-head"><h3>Riwayat Update</h3></div>
+            <div class="panel-head" id="updateToolbar"><h3>Riwayat Update</h3></div>
             <table><thead><tr><th>Judul</th><th>Tanggal</th><th></th></tr></thead><tbody id="updateTable"></tbody></table>
           </div>
         </div>
@@ -166,16 +187,47 @@
 
   <script src="assets/api.js"></script>
   <script>
-    const STATE = { produkList: [], selectedProduk: null, modulList: [], selectedModul: null, kontenList: [] };
+    const STATE = {
+      produkList: [], selectedProduk: null, modulList: [], selectedModul: null, kontenList: [],
+      usersList: [], kodeList: [], promptList: [], updateList: [],
+      sort: { users: 'daftar_desc', produk: 'urutan_asc', kodeakses: 'tersedia_dulu', prompt: 'judul_asc', update: 'tanggal_desc' },
+      filter: { users: '', produk: '', kodeakses: '', prompt: '' }
+    };
 
     const TABS = [
-      { key: 'statistik', label: 'Statistik', icon: 'chart' },
+      { key: 'statistik', label: 'Beranda', icon: 'chart' },
       { key: 'produk', label: 'Produk & Konten', icon: 'box' },
       { key: 'prompt', label: 'Prompt Library', icon: 'list' },
       { key: 'kodeakses', label: 'Kode Akses', icon: 'key' },
       { key: 'users', label: 'Users', icon: 'users' },
       { key: 'update', label: 'Update', icon: 'bell' }
     ];
+
+    const SORT_OPTIONS = {
+      users: [
+        { value: 'daftar_desc', label: 'Terbaru daftar' },
+        { value: 'daftar_asc', label: 'Terlama daftar' },
+        { value: 'nama_asc', label: 'Nama (A-Z)' },
+        { value: 'login_desc', label: 'Terakhir login' }
+      ],
+      produk: [
+        { value: 'urutan_asc', label: 'Urutan' },
+        { value: 'nama_asc', label: 'Nama (A-Z)' }
+      ],
+      kodeakses: [
+        { value: 'tersedia_dulu', label: 'Tersedia dulu' },
+        { value: 'kode_asc', label: 'Kode (A-Z)' },
+        { value: 'terpakai_terbaru', label: 'Terpakai terbaru' }
+      ],
+      prompt: [
+        { value: 'judul_asc', label: 'Judul (A-Z)' },
+        { value: 'kategori_asc', label: 'Kategori' }
+      ],
+      update: [
+        { value: 'tanggal_desc', label: 'Terbaru' },
+        { value: 'tanggal_asc', label: 'Terlama' }
+      ]
+    };
 
     /** Nama produk berdasarkan id — dipakai agar tabel tidak lagi menampilkan ID mentah. */
     const PRODUK_NAMA = {};
@@ -184,7 +236,6 @@
     if (requireAdmin()) {
       try {
         mountSidebar('admin');
-        renderQuickGrid();
         showLoading('Memuat beranda...');
         loadBeranda();
       } catch (err) {
@@ -201,22 +252,55 @@
     }
 
     /**
-     * Menu yang TIDAK punya ringkasan di beranda tetap butuh pintu masuk.
-     * Kalau tidak, menghapus deretan tab akan membuat Prompt Library dan
-     * Update tidak bisa dijangkau sama sekali.
+     * Bangun HTML kotak cari + dropdown urut untuk kepala sebuah panel.
+     * PENTING: dipanggil hanya SEKALI saat data pertama kali dimuat (di
+     * loadX()), bukan setiap kali user mengetik. Kalau elemen <input> ini
+     * ikut dibangun ulang tiap ketikan, fokus & posisi kursor hilang dan
+     * user cuma bisa mengetik satu huruf lalu harus klik ulang.
      */
-    function renderQuickGrid() {
-      const menu = [
-        { key: 'prompt', desc: 'Kelola koleksi prompt tiap produk' },
-        { key: 'update', desc: 'Tulis pengumuman untuk semua member' }
-      ];
-      document.getElementById('quickGrid').innerHTML = menu.map(function (m) {
-        const t = TABS.find(function (x) { return x.key === m.key; });
-        return '<button class="quick-card" onclick="switchAdminTab(\'' + escapeJs(m.key) + '\')">' +
-          '<span class="quick-icon">' + (ICONS[t.icon] || '') + '</span>' +
-          '<span><b>' + escapeHtml(t.label) + '</b><span>' + escapeHtml(m.desc) + '</span></span>' +
-          '</button>';
-      }).join('');
+    function toolbarHtml(view, judul, withFilter, placeholder) {
+      const opsi = SORT_OPTIONS[view] || [];
+      const filterHtml = withFilter
+        ? '<input type="search" class="toolbar-input" placeholder="' + escapeAttr(placeholder) +
+          '" value="' + escapeAttr(STATE.filter[view] || '') +
+          '" oninput="onFilterChange(\'' + view + '\', this.value)">'
+        : '';
+      const sortHtml = '<select class="toolbar-select" onchange="onSortChange(\'' + view + '\', this.value)">' +
+        opsi.map(function (o) {
+          const dipilih = STATE.sort[view] === o.value ? ' selected' : '';
+          return '<option value="' + o.value + '"' + dipilih + '>Urutkan: ' + escapeHtml(o.label) + '</option>';
+        }).join('') + '</select>';
+      return '<h3>' + escapeHtml(judul) + '</h3><div class="toolbar-controls">' + filterHtml + sortHtml + '</div>';
+    }
+
+    /** Dipanggil dari input pencarian. Tidak menembak server — data sudah di cache. */
+    function onFilterChange(view, value) {
+      STATE.filter[view] = value;
+      renderRowsFor(view);
+    }
+
+    /** Dipanggil dari dropdown urutkan. Juga tidak menembak server. */
+    function onSortChange(view, value) {
+      STATE.sort[view] = value;
+      renderRowsFor(view);
+    }
+
+    function renderRowsFor(view) {
+      if (view === 'users') renderUsersRows();
+      if (view === 'produk') renderProdukRows();
+      if (view === 'kodeakses') renderKodeAksesRows();
+      if (view === 'prompt') renderPromptRows();
+      if (view === 'update') renderUpdateRows();
+    }
+
+    function cocokFilter(query, teks) {
+      if (!query) return true;
+      return String(teks || '').toLowerCase().indexOf(query.toLowerCase()) !== -1;
+    }
+
+    function waktuMs(v) {
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? 0 : d.getTime();
     }
 
     /** Beranda tidak punya tombol kembali; menu lain punya. */
@@ -281,21 +365,27 @@
      */
     async function loadBeranda() {
       try {
-        const [stat, users, produk, kode] = await Promise.all([
+        const [stat, users, produk, kode, prompt, update] = await Promise.all([
           apiGet('adminGetStatistik', {}),
           apiGet('adminGetAllUsers', {}),
           apiGet('adminGetAllProduk', {}),
-          apiGet('adminGetAllKodeAkses', {})
+          apiGet('adminGetAllKodeAkses', {}),
+          apiGet('adminGetAllPrompt', {}),
+          apiGet('adminGetAllUpdate', {})
         ]);
         hideLoading();
 
         if (handleSessionExpired(stat) || handleSessionExpired(users) ||
-            handleSessionExpired(produk) || handleSessionExpired(kode)) return;
+            handleSessionExpired(produk) || handleSessionExpired(kode) ||
+            handleSessionExpired(prompt) || handleSessionExpired(update)) return;
 
         renderStatGrid(stat);
         renderHomeUsers(users);
         renderHomeProduk(produk);
         renderHomeKode(kode);
+        renderHomePrompt(prompt);
+        renderHomeUpdate(update);
+        renderGrowthChart(users);
       } catch (err) {
         hideLoading();
         showToast('Gagal terhubung ke server: ' + err.message);
@@ -369,6 +459,11 @@
           }).join('');
     }
 
+    /** Dipakai bersama oleh beranda & tampilan penuh Kode Akses. */
+    function isKodeTerpakai(k) {
+      return k.status_pakai === true || k.status_pakai === 'TRUE' || k.status_pakai === 'terpakai';
+    }
+
     function renderHomeKode(res) {
       const tbody = document.getElementById('homeKode');
       if (!res.success) { tbody.innerHTML = emptyRow(4, 'Gagal memuat: ' + res.message); return; }
@@ -376,18 +471,15 @@
 
       // Kode yang MASIH TERSEDIA didahulukan — itu yang biasanya dicari admin
       // saat mau membagikan akses ke pembeli baru.
-      const terpakai = function (k) {
-        return k.status_pakai === true || k.status_pakai === 'TRUE' || k.status_pakai === 'terpakai';
-      };
       const urut = list.slice().sort(function (a, b) {
-        return (terpakai(a) ? 1 : 0) - (terpakai(b) ? 1 : 0);
+        return (isKodeTerpakai(a) ? 1 : 0) - (isKodeTerpakai(b) ? 1 : 0);
       }).slice(0, PREVIEW_MAX);
 
       setHomeMeta('headKode', 'footKode', 'Kode Akses', list.length, urut.length);
       tbody.innerHTML = urut.length === 0
         ? emptyRow(4, 'Belum ada kode akses.')
         : urut.map(function (k) {
-            const status = terpakai(k)
+            const status = isKodeTerpakai(k)
               ? '<span class="badge nonaktif">Terpakai</span>'
               : '<span class="badge aktif">Tersedia</span>';
             return '<tr><td class="code-mono">' + escapeHtml(k.kode) + '</td>' +
@@ -397,6 +489,92 @@
           }).join('');
     }
 
+    function renderHomePrompt(res) {
+      const tbody = document.getElementById('homePrompt');
+      if (!res.success) { tbody.innerHTML = emptyRow(3, 'Gagal memuat: ' + res.message); return; }
+      const list = res.data || [];
+      STATE.promptList = list;
+
+      const tampil = list.slice(0, PREVIEW_MAX);
+      setHomeMeta('headPrompt', 'footPrompt', 'Prompt Library', list.length, tampil.length);
+      tbody.innerHTML = tampil.length === 0
+        ? emptyRow(3, 'Belum ada prompt.')
+        : tampil.map(function (p) {
+            return '<tr><td>' + escapeHtml(p.judul) + '</td>' +
+              '<td><span class="chip">' + escapeHtml(p.kategori || 'Umum') + '</span></td>' +
+              '<td>' + escapeHtml(namaProduk(p.produk_id)) + '</td></tr>';
+          }).join('');
+    }
+
+    function renderHomeUpdate(res) {
+      const tbody = document.getElementById('homeUpdate');
+      if (!res.success) { tbody.innerHTML = emptyRow(2, 'Gagal memuat: ' + res.message); return; }
+      const list = res.data || []; // server sudah mengurutkan dari terbaru
+      STATE.updateList = list;
+
+      const tampil = list.slice(0, PREVIEW_MAX);
+      setHomeMeta('headUpdate', 'footUpdate', 'Update', list.length, tampil.length);
+      tbody.innerHTML = tampil.length === 0
+        ? emptyRow(2, 'Belum ada update.')
+        : tampil.map(function (u) {
+            return '<tr><td>' + escapeHtml(u.judul) + '</td><td>' + escapeHtml(formatTanggal(u.tanggal)) + '</td></tr>';
+          }).join('');
+    }
+
+    /**
+     * Grafik batang pertumbuhan user per bulan, dari kolom tanggal_daftar.
+     * SVG digambar manual (bukan library) — cukup untuk kebutuhan ini dan
+     * tidak menambah beban muat halaman.
+     */
+    function renderGrowthChart(res) {
+      const target = document.getElementById('growthChart');
+      if (!res.success) { target.innerHTML = '<div class="growth-empty">Gagal memuat data user.</div>'; return; }
+
+      const list = res.data || [];
+      const bucket = {}; // 'YYYY-MM' -> jumlah user daftar di bulan itu
+      list.forEach(function (u) {
+        const d = new Date(u.tanggal_daftar);
+        if (isNaN(d.getTime())) return; // lewati baris tanpa tanggal daftar yang valid
+        const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        bucket[key] = (bucket[key] || 0) + 1;
+      });
+
+      const keys = Object.keys(bucket).sort();
+      if (keys.length === 0) {
+        target.innerHTML = '<div class="growth-empty">Belum cukup data (tanggal_daftar) untuk menampilkan grafik.</div>';
+        return;
+      }
+
+      const NAMA_BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      const labelBulan = function (key) {
+        const parts = key.split('-');
+        return NAMA_BULAN[parseInt(parts[1], 10) - 1] + ' ' + parts[0].slice(2);
+      };
+
+      const nilai = keys.map(function (k) { return bucket[k]; });
+      const maks = Math.max.apply(null, nilai);
+      const lebar = 680, tinggi = 160, padBawah = 26, padAtas = 20;
+      const lebarBar = Math.min(56, (lebar / keys.length) - 14);
+      const jarak = lebar / keys.length;
+
+      let svg = '<svg viewBox="0 0 ' + lebar + ' ' + tinggi + '" style="width:100%;height:auto;" role="img" aria-label="Grafik pertumbuhan user per bulan">';
+      keys.forEach(function (k, i) {
+        const v = bucket[k];
+        const tinggiBar = maks > 0 ? ((v / maks) * (tinggi - padBawah - padAtas)) : 0;
+        const x = i * jarak + (jarak - lebarBar) / 2;
+        const y = tinggi - padBawah - tinggiBar;
+        svg += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + lebarBar.toFixed(1) +
+          '" height="' + tinggiBar.toFixed(1) + '" rx="4" fill="var(--accent)"></rect>';
+        svg += '<text class="growth-bar-count" x="' + (x + lebarBar / 2).toFixed(1) + '" y="' + (y - 6).toFixed(1) +
+          '" text-anchor="middle">' + v + '</text>';
+        svg += '<text class="growth-bar-label" x="' + (x + lebarBar / 2).toFixed(1) + '" y="' + (tinggi - 8) +
+          '" text-anchor="middle">' + labelBulan(k) + '</text>';
+      });
+      svg += '</svg>';
+
+      target.innerHTML = svg;
+    }
+
     /* ---------------- PRODUK, MODUL, KONTEN ---------------- */
     async function loadProdukList() {
       STATE.selectedProduk = null; STATE.selectedModul = null;
@@ -404,35 +582,57 @@
       try {
         STATE.produkList = await fetchProdukList();
         hideLoading();
-        renderProdukList();
+        renderProdukShell();
       } catch (err) {
         hideLoading();
         showToast('Gagal memuat produk: ' + err.message);
       }
     }
 
-    function renderProdukList() {
-      let html = '<div class="panel"><div class="panel-head"><h3>Tambah Produk Baru</h3></div>' +
+    /** Bagian yang jarang berubah: form tambah + kerangka tabel. Dibangun sekali per kunjungan tab. */
+    function renderProdukShell() {
+      const html = '<div class="panel"><div class="panel-head"><h3>Tambah Produk Baru</h3></div>' +
         '<div class="form-row"><div><label>Nama Produk</label><input id="pNama"></div>' +
         '<div><label>Kategori</label><input id="pKategori" placeholder="Contoh: Video Course"></div></div>' +
         '<div class="form-row single"><div><label>Deskripsi</label><textarea id="pDeskripsi"></textarea></div></div>' +
         '<div class="form-row single"><div><label>URL Thumbnail (opsional)</label><input id="pThumbnail" placeholder="https://..."></div></div>' +
-        '<button class="btn btn-primary btn-sm" onclick="createProduk()">Tambah Produk</button></div>';
-
-      html += '<div class="panel"><div class="panel-head"><h3>Daftar Produk</h3></div><table><thead><tr><th>Nama</th><th>Kategori</th><th></th></tr></thead><tbody>';
-      if (STATE.produkList.length === 0) {
-        html += '<tr class="empty-row"><td colspan="3">Belum ada produk.</td></tr>';
-      } else {
-        STATE.produkList.forEach(function (p) {
-          // FIX: nama produk dulu di-escape hanya untuk kutip tunggal (escapeQ),
-          // sehingga nama berisi < > atau kutip ganda merusak baris tabel.
-          html += '<tr><td>' + escapeHtml(p.nama) + '</td><td>' + escapeHtml(p.kategori || '-') + '</td><td class="row-actions">' +
-            '<button class="btn btn-outline btn-sm" onclick="openModul(\'' + escapeJs(p.id) + '\', \'' + escapeJs(p.nama) + '\')">Kelola Modul</button>' +
-            '<button class="btn btn-outline btn-sm" onclick="deleteProduk(\'' + escapeJs(p.id) + '\')">Hapus</button></td></tr>';
-        });
-      }
-      html += '</tbody></table></div>';
+        '<button class="btn btn-primary btn-sm" onclick="createProduk()">Tambah Produk</button></div>' +
+        '<div class="panel"><div class="panel-head" id="produkToolbar"></div>' +
+        '<table><thead><tr><th>Nama</th><th>Kategori</th><th></th></tr></thead><tbody id="produkTableBody"></tbody></table></div>';
       document.getElementById('produkArea').innerHTML = html;
+      document.getElementById('produkToolbar').innerHTML = toolbarHtml('produk', 'Daftar Produk', true, 'Cari nama atau kategori...');
+      renderProdukRows();
+    }
+
+    /** Bagian yang sering berubah (tiap ketik/ganti urutan): isi <tbody> saja. */
+    function renderProdukRows() {
+      const tbody = document.getElementById('produkTableBody');
+      if (!tbody) return; // user sudah pindah ke sub-halaman modul
+
+      const q = STATE.filter.produk;
+      let list = STATE.produkList.filter(function (p) {
+        return cocokFilter(q, p.nama) || cocokFilter(q, p.kategori);
+      });
+
+      const sort = STATE.sort.produk;
+      if (sort === 'nama_asc') {
+        list = list.slice().sort(function (a, b) { return String(a.nama).localeCompare(String(b.nama)); });
+      } else {
+        list = list.slice().sort(function (a, b) { return (a.urutan || 0) - (b.urutan || 0); });
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="3">' +
+          (STATE.produkList.length === 0 ? 'Belum ada produk.' : 'Tidak ada produk yang cocok dengan pencarian.') + '</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(function (p) {
+        // FIX: nama produk dulu di-escape hanya untuk kutip tunggal (escapeQ),
+        // sehingga nama berisi < > atau kutip ganda merusak baris tabel.
+        return '<tr><td>' + escapeHtml(p.nama) + '</td><td>' + escapeHtml(p.kategori || '-') + '</td><td class="row-actions">' +
+          '<button class="btn btn-outline btn-sm" onclick="openModul(\'' + escapeJs(p.id) + '\', \'' + escapeJs(p.nama) + '\')">Kelola Modul</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="deleteProduk(\'' + escapeJs(p.id) + '\')">Hapus</button></td></tr>';
+      }).join('');
     }
 
     async function createProduk() {
@@ -454,7 +654,7 @@
     }
 
     async function deleteProduk(id) {
-      if (!confirm('Hapus produk ini? Modul & konten di dalamnya tidak otomatis terhapus.')) return;
+      if (!confirm('Hapus produk ini beserta seluruh modul, konten, dan kode aksesnya? Tindakan ini tidak bisa dibatalkan.')) return;
       showLoading('Menghapus produk...');
       try {
         const res = await apiPost('adminDeleteProduk', { produkId: id });
@@ -614,21 +814,39 @@
         const res = await apiGet('adminGetAllPrompt', {});
         hideLoading();
         if (handleSessionExpired(res)) return;
-        const list = res.data || [];
-        const tbody = document.getElementById('promptTable');
-        if (list.length === 0) {
-          tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Belum ada prompt.</td></tr>';
-          return;
-        }
-        // FIX: kolom "Produk" dulu menampilkan produk_id mentah (PRD_a1b2c3),
-        // sekarang dipetakan ke nama produk.
-        tbody.innerHTML = list.map(function (p) {
-          return '<tr><td>' + escapeHtml(p.judul) + '</td>' +
-            '<td><span class="chip">' + escapeHtml(p.kategori || 'Umum') + '</span></td>' +
-            '<td>' + escapeHtml(namaProduk(p.produk_id)) + '</td>' +
-            '<td><button class="btn btn-outline btn-sm" onclick="deletePrompt(\'' + escapeJs(p.id) + '\')">Hapus</button></td></tr>';
-        }).join('');
+        STATE.promptList = res.data || [];
+        document.getElementById('promptToolbar').innerHTML = toolbarHtml('prompt', 'Daftar Prompt', true, 'Cari judul, kategori, atau produk...');
+        renderPromptRows();
       } catch (err) { hideLoading(); showToast('Gagal memuat prompt: ' + err.message); }
+    }
+
+    function renderPromptRows() {
+      const tbody = document.getElementById('promptTable');
+      const q = STATE.filter.prompt;
+      let list = STATE.promptList.filter(function (p) {
+        return cocokFilter(q, p.judul) || cocokFilter(q, p.kategori) || cocokFilter(q, namaProduk(p.produk_id));
+      });
+
+      const sort = STATE.sort.prompt;
+      if (sort === 'kategori_asc') {
+        list = list.slice().sort(function (a, b) { return String(a.kategori || '').localeCompare(String(b.kategori || '')); });
+      } else {
+        list = list.slice().sort(function (a, b) { return String(a.judul).localeCompare(String(b.judul)); });
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="4">' +
+          (STATE.promptList.length === 0 ? 'Belum ada prompt.' : 'Tidak ada prompt yang cocok dengan pencarian.') + '</td></tr>';
+        return;
+      }
+      // FIX: kolom "Produk" dulu menampilkan produk_id mentah (PRD_a1b2c3),
+      // sekarang dipetakan ke nama produk.
+      tbody.innerHTML = list.map(function (p) {
+        return '<tr><td>' + escapeHtml(p.judul) + '</td>' +
+          '<td><span class="chip">' + escapeHtml(p.kategori || 'Umum') + '</span></td>' +
+          '<td>' + escapeHtml(namaProduk(p.produk_id)) + '</td>' +
+          '<td><button class="btn btn-outline btn-sm" onclick="deletePrompt(\'' + escapeJs(p.id) + '\')">Hapus</button></td></tr>';
+      }).join('');
     }
 
     async function createPrompt() {
@@ -674,26 +892,43 @@
         const res = await apiGet('adminGetAllKodeAkses', {});
         hideLoading();
         if (handleSessionExpired(res)) return;
-        const list = res.data || [];
-        const tbody = document.getElementById('kodeAksesTable');
-        if (list.length === 0) {
-          tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Belum ada kode akses.</td></tr>';
-          return;
-        }
-        tbody.innerHTML = list.map(function (k) {
-          // FIX: status_pakai bisa berupa boolean TRUE dari Google Sheets, bukan
-          // hanya string 'terpakai' — dulu kode terpakai bisa tampil "Tersedia".
-          const terpakai = k.status_pakai === true || k.status_pakai === 'TRUE' || k.status_pakai === 'terpakai';
-          const status = terpakai
-            ? '<span class="badge nonaktif">Terpakai</span>'
-            : '<span class="badge aktif">Tersedia</span>';
-          return '<tr><td class="code-mono">' + escapeHtml(k.kode) + '</td>' +
-            '<td>' + escapeHtml(namaProduk(k.produk_id)) + '</td>' +
-            '<td>' + status + '</td>' +
-            '<td>' + escapeHtml(k.dipakai_oleh || '-') + '</td>' +
-            '<td><button class="btn btn-outline btn-sm" onclick="deleteKode(\'' + escapeJs(k.kode) + '\')">Hapus</button></td></tr>';
-        }).join('');
+        STATE.kodeList = res.data || [];
+        document.getElementById('kodeAksesToolbar').innerHTML = toolbarHtml('kodeakses', 'Daftar Kode Akses', true, 'Cari kode, produk, atau pemakai...');
+        renderKodeAksesRows();
       } catch (err) { hideLoading(); showToast('Gagal memuat kode akses: ' + err.message); }
+    }
+
+    function renderKodeAksesRows() {
+      const tbody = document.getElementById('kodeAksesTable');
+      const q = STATE.filter.kodeakses;
+      let list = STATE.kodeList.filter(function (k) {
+        return cocokFilter(q, k.kode) || cocokFilter(q, namaProduk(k.produk_id)) || cocokFilter(q, k.dipakai_oleh);
+      });
+
+      const sort = STATE.sort.kodeakses;
+      if (sort === 'kode_asc') {
+        list = list.slice().sort(function (a, b) { return String(a.kode).localeCompare(String(b.kode)); });
+      } else if (sort === 'terpakai_terbaru') {
+        list = list.slice().sort(function (a, b) { return waktuMs(b.tanggal_pakai) - waktuMs(a.tanggal_pakai); });
+      } else {
+        list = list.slice().sort(function (a, b) { return (isKodeTerpakai(a) ? 1 : 0) - (isKodeTerpakai(b) ? 1 : 0); });
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">' +
+          (STATE.kodeList.length === 0 ? 'Belum ada kode akses.' : 'Tidak ada kode yang cocok dengan pencarian.') + '</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(function (k) {
+        const status = isKodeTerpakai(k)
+          ? '<span class="badge nonaktif">Terpakai</span>'
+          : '<span class="badge aktif">Tersedia</span>';
+        return '<tr><td class="code-mono">' + escapeHtml(k.kode) + '</td>' +
+          '<td>' + escapeHtml(namaProduk(k.produk_id)) + '</td>' +
+          '<td>' + status + '</td>' +
+          '<td>' + escapeHtml(k.dipakai_oleh || '-') + '</td>' +
+          '<td><button class="btn btn-outline btn-sm" onclick="deleteKode(\'' + escapeJs(k.kode) + '\')">Hapus</button></td></tr>';
+      }).join('');
     }
 
     async function generateKode() {
@@ -731,32 +966,54 @@
         const res = await apiGet('adminGetAllUsers', {});
         hideLoading();
         if (handleSessionExpired(res)) return;
-        const list = res.data || [];
-        const tbody = document.getElementById('usersTable');
-        if (list.length === 0) {
-          tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Belum ada user.</td></tr>';
-          return;
-        }
-        const me = getSession() || {};
-        tbody.innerHTML = list.map(function (u) {
-          const statusBadge = u.status === 'aktif' ? '<span class="badge aktif">Aktif</span>' : '<span class="badge nonaktif">Nonaktif</span>';
-          const roleBadge = u.role === 'admin' ? '<span class="badge admin">Admin</span>' : 'Member';
-          const toggleLabel = u.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan';
-          const toggleStatus = u.status === 'aktif' ? 'nonaktif' : 'aktif';
-
-          // FIX: admin dulu bisa menonaktifkan / menghapus akunnya sendiri
-          // dan langsung terkunci keluar dari panel.
-          const isSelf = String(u.email).toLowerCase() === String(me.email || '').toLowerCase();
-          const aksi = isSelf
-            ? '<span style="font-size:12px;color:var(--ink-soft);">Akun kamu</span>'
-            : '<button class="btn btn-outline btn-sm" onclick="toggleUserStatus(\'' + escapeJs(u.id) + '\', \'' + toggleStatus + '\')">' + toggleLabel + '</button>' +
-              '<button class="btn btn-outline btn-sm" onclick="deleteUser(\'' + escapeJs(u.id) + '\')">Hapus</button>';
-
-          return '<tr><td>' + escapeHtml(u.nama) + '</td><td>' + escapeHtml(u.email) + '</td><td>' + roleBadge + '</td>' +
-            '<td>' + statusBadge + '</td><td>' + escapeHtml(formatTanggal(u.terakhir_login)) + '</td>' +
-            '<td class="row-actions">' + aksi + '</td></tr>';
-        }).join('');
+        STATE.usersList = res.data || [];
+        document.getElementById('usersToolbar').innerHTML = toolbarHtml('users', 'Daftar Users', true, 'Cari nama atau email...');
+        renderUsersRows();
       } catch (err) { hideLoading(); showToast('Gagal memuat user: ' + err.message); }
+    }
+
+    function renderUsersRows() {
+      const tbody = document.getElementById('usersTable');
+      const q = STATE.filter.users;
+      let list = STATE.usersList.filter(function (u) {
+        return cocokFilter(q, u.nama) || cocokFilter(q, u.email);
+      });
+
+      const sort = STATE.sort.users;
+      if (sort === 'nama_asc') {
+        list = list.slice().sort(function (a, b) { return String(a.nama).localeCompare(String(b.nama)); });
+      } else if (sort === 'daftar_asc') {
+        list = list.slice().sort(function (a, b) { return waktuMs(a.tanggal_daftar) - waktuMs(b.tanggal_daftar); });
+      } else if (sort === 'login_desc') {
+        list = list.slice().sort(function (a, b) { return waktuMs(b.terakhir_login) - waktuMs(a.terakhir_login); });
+      } else {
+        list = list.slice().sort(function (a, b) { return waktuMs(b.tanggal_daftar) - waktuMs(a.tanggal_daftar); });
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">' +
+          (STATE.usersList.length === 0 ? 'Belum ada user.' : 'Tidak ada user yang cocok dengan pencarian.') + '</td></tr>';
+        return;
+      }
+      const me = getSession() || {};
+      tbody.innerHTML = list.map(function (u) {
+        const statusBadge = u.status === 'aktif' ? '<span class="badge aktif">Aktif</span>' : '<span class="badge nonaktif">Nonaktif</span>';
+        const roleBadge = u.role === 'admin' ? '<span class="badge admin">Admin</span>' : 'Member';
+        const toggleLabel = u.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan';
+        const toggleStatus = u.status === 'aktif' ? 'nonaktif' : 'aktif';
+
+        // FIX: admin dulu bisa menonaktifkan / menghapus akunnya sendiri
+        // dan langsung terkunci keluar dari panel.
+        const isSelf = String(u.email).toLowerCase() === String(me.email || '').toLowerCase();
+        const aksi = isSelf
+          ? '<span style="font-size:12px;color:var(--ink-soft);">Akun kamu</span>'
+          : '<button class="btn btn-outline btn-sm" onclick="toggleUserStatus(\'' + escapeJs(u.id) + '\', \'' + toggleStatus + '\')">' + toggleLabel + '</button>' +
+            '<button class="btn btn-outline btn-sm" onclick="deleteUser(\'' + escapeJs(u.id) + '\')">Hapus</button>';
+
+        return '<tr><td>' + escapeHtml(u.nama) + '</td><td>' + escapeHtml(u.email) + '</td><td>' + roleBadge + '</td>' +
+          '<td>' + statusBadge + '</td><td>' + escapeHtml(formatTanggal(u.terakhir_login)) + '</td>' +
+          '<td class="row-actions">' + aksi + '</td></tr>';
+      }).join('');
     }
 
     async function toggleUserStatus(userId, newStatus) {
@@ -788,17 +1045,28 @@
         const res = await apiGet('adminGetAllUpdate', {});
         hideLoading();
         if (handleSessionExpired(res)) return;
-        const list = res.data || [];
-        const tbody = document.getElementById('updateTable');
-        if (list.length === 0) {
-          tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Belum ada update.</td></tr>';
-          return;
-        }
-        tbody.innerHTML = list.map(function (u) {
-          return '<tr><td>' + escapeHtml(u.judul) + '</td><td>' + escapeHtml(formatTanggal(u.tanggal)) + '</td>' +
-            '<td><button class="btn btn-outline btn-sm" onclick="deleteUpdate(\'' + escapeJs(u.id) + '\')">Hapus</button></td></tr>';
-        }).join('');
+        STATE.updateList = res.data || [];
+        document.getElementById('updateToolbar').innerHTML = toolbarHtml('update', 'Riwayat Update', false, '');
+        renderUpdateRows();
       } catch (err) { hideLoading(); showToast('Gagal memuat update: ' + err.message); }
+    }
+
+    function renderUpdateRows() {
+      const tbody = document.getElementById('updateTable');
+      let list = STATE.updateList.slice();
+      list.sort(function (a, b) {
+        const d = waktuMs(b.tanggal) - waktuMs(a.tanggal);
+        return STATE.sort.update === 'tanggal_asc' ? -d : d;
+      });
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Belum ada update.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(function (u) {
+        return '<tr><td>' + escapeHtml(u.judul) + '</td><td>' + escapeHtml(formatTanggal(u.tanggal)) + '</td>' +
+          '<td><button class="btn btn-outline btn-sm" onclick="deleteUpdate(\'' + escapeJs(u.id) + '\')">Hapus</button></td></tr>';
+      }).join('');
     }
 
     async function createUpdate() {
