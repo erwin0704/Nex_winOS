@@ -23,6 +23,11 @@
       border: 1px solid var(--border); background: var(--surface); color: var(--ink-soft); cursor: pointer;
     }
     .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+    /* FIX: .back-btn dulu cuma dipakai untuk teks panah "← Beranda", tidak
+       pernah berisi <svg>. Begitu ikon gear (Pengaturan) dipasang ke situ,
+       SVG-nya tidak diberi ukuran — jatuh ke ukuran bawaan browser (300x150px,
+       nyaris kosong terlihat), makanya tampak seperti oval kosong. */
+    .back-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
     .nav-title { font-size: 14px; font-weight: 700; color: var(--ink); }
 
     /* ---- Kartu statistik ---- */
