@@ -29,12 +29,33 @@
     .stat-grid { grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); margin-bottom: 28px; }
 
     /* ---- Panel ringkasan di beranda ---- */
-    .home-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .home-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .home-head-left { display: flex; align-items: center; gap: 8px; }
+    .home-head-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .home-head h3 { font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px; }
     .home-head h3 svg { width: 16px; height: 16px; color: var(--ink-soft); }
     .home-count { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
     .home-foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); text-align: center; }
     .home-more { font-size: 12px; color: var(--ink-soft); }
+
+    /* Tombol kecil panah atas-bawah untuk balik urutan tanggal di panel beranda. */
+    .sort-icon-btn {
+      width: 26px; height: 26px; flex-shrink: 0; padding: 0;
+      border: 1px solid var(--border); border-radius: 7px; background: var(--surface);
+      color: var(--ink-soft); font-size: 13px; line-height: 1; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .sort-icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Kotak cari ringkas dengan ikon kaca pembesar, dipakai di panel beranda. */
+    .home-search-wrap { position: relative; display: inline-flex; align-items: center; }
+    .home-search-wrap svg { position: absolute; left: 8px; width: 13px; height: 13px; color: var(--ink-soft); pointer-events: none; }
+    .home-search-input {
+      width: 150px; padding: 6px 8px 6px 26px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 12px; font-family: var(--font-body); background: var(--bg); color: var(--ink);
+      transition: width 0.15s ease, border-color 0.15s ease;
+    }
+    .home-search-input:focus { width: 190px; border-color: var(--accent); outline: none; background: var(--surface); }
 
     /* ---- Toolbar sort & filter di kepala tiap panel ---- */
     .panel-head { flex-wrap: wrap; gap: 10px; }
@@ -75,43 +96,82 @@
 
           <div class="panel">
             <div class="home-head">
-              <h3 id="headUsers">Users</h3>
-              <button class="btn btn-primary btn-sm" onclick="switchAdminTab('users')">Kelola Users</button>
+              <div class="home-head-left">
+                <h3 id="headUsers">Users</h3>
+                <button class="sort-icon-btn" id="sortIconUsers" onclick="toggleHomeSort('users')" title="Terbaru dulu (klik untuk balik)" aria-label="Balik urutan tanggal">↓</button>
+              </div>
+              <div class="home-head-right">
+                <div class="home-search-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                  <input type="search" class="home-search-input" placeholder="Cari nama/email..." oninput="onHomeFilterChange('users', this.value)">
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="switchAdminTab('users')">Kelola Users</button>
+              </div>
             </div>
-            <table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody id="homeUsers"></tbody></table>
+            <table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Status</th><th>Tanggal Daftar</th></tr></thead><tbody id="homeUsers"></tbody></table>
             <div class="home-foot" id="footUsers"></div>
           </div>
 
           <div class="panel">
             <div class="home-head">
-              <h3 id="headProduk">Produk</h3>
-              <button class="btn btn-primary btn-sm" onclick="switchAdminTab('produk')">Kelola Produk</button>
+              <div class="home-head-left">
+                <h3 id="headProduk">Produk</h3>
+                <button class="sort-icon-btn" id="sortIconProduk" onclick="toggleHomeSort('produk')" title="Terbaru dulu (klik untuk balik)" aria-label="Balik urutan tanggal">↓</button>
+              </div>
+              <div class="home-head-right">
+                <div class="home-search-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                  <input type="search" class="home-search-input" placeholder="Cari nama/kategori..." oninput="onHomeFilterChange('produk', this.value)">
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="switchAdminTab('produk')">Kelola Produk</button>
+              </div>
             </div>
-            <table><thead><tr><th>Nama</th><th>Kategori</th></tr></thead><tbody id="homeProduk"></tbody></table>
+            <table><thead><tr><th>Nama</th><th>Kategori</th><th>Tanggal Dibuat</th></tr></thead><tbody id="homeProduk"></tbody></table>
             <div class="home-foot" id="footProduk"></div>
           </div>
 
           <div class="panel">
             <div class="home-head">
-              <h3 id="headKode">Kode Akses</h3>
-              <button class="btn btn-primary btn-sm" onclick="switchAdminTab('kodeakses')">Kelola Kode Akses</button>
+              <div class="home-head-left">
+                <h3 id="headKode">Kode Akses</h3>
+                <button class="sort-icon-btn" id="sortIconKodeakses" onclick="toggleHomeSort('kodeakses')" title="Terbaru dulu (klik untuk balik)" aria-label="Balik urutan tanggal">↓</button>
+              </div>
+              <div class="home-head-right">
+                <div class="home-search-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                  <input type="search" class="home-search-input" placeholder="Cari kode/produk..." oninput="onHomeFilterChange('kodeakses', this.value)">
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="switchAdminTab('kodeakses')">Kelola Kode Akses</button>
+              </div>
             </div>
-            <table><thead><tr><th>Kode</th><th>Produk</th><th>Status</th><th>Dipakai Oleh</th></tr></thead><tbody id="homeKode"></tbody></table>
+            <table><thead><tr><th>Kode</th><th>Produk</th><th>Status</th><th>Dipakai Oleh</th><th>Tanggal Dibuat</th></tr></thead><tbody id="homeKode"></tbody></table>
             <div class="home-foot" id="footKode"></div>
           </div>
 
           <div class="panel">
             <div class="home-head">
-              <h3 id="headPrompt">Prompt Library</h3>
-              <button class="btn btn-primary btn-sm" onclick="switchAdminTab('prompt')">Kelola Prompt</button>
+              <div class="home-head-left">
+                <h3 id="headPrompt">Prompt Library</h3>
+                <button class="sort-icon-btn" id="sortIconPrompt" onclick="toggleHomeSort('prompt')" title="Terbaru dulu (klik untuk balik)" aria-label="Balik urutan tanggal">↓</button>
+              </div>
+              <div class="home-head-right">
+                <div class="home-search-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                  <input type="search" class="home-search-input" placeholder="Cari judul/kategori..." oninput="onHomeFilterChange('prompt', this.value)">
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="switchAdminTab('prompt')">Kelola Prompt</button>
+              </div>
             </div>
-            <table><thead><tr><th>Judul</th><th>Kategori</th><th>Produk</th></tr></thead><tbody id="homePrompt"></tbody></table>
+            <table><thead><tr><th>Judul</th><th>Kategori</th><th>Produk</th><th>Tanggal Dibuat</th></tr></thead><tbody id="homePrompt"></tbody></table>
             <div class="home-foot" id="footPrompt"></div>
           </div>
 
           <div class="panel">
             <div class="home-head">
-              <h3 id="headUpdate">Update</h3>
+              <div class="home-head-left">
+                <h3 id="headUpdate">Update</h3>
+                <button class="sort-icon-btn" id="sortIconUpdate" onclick="toggleHomeSort('update')" title="Terbaru dulu (klik untuk balik)" aria-label="Balik urutan tanggal">↓</button>
+              </div>
               <button class="btn btn-primary btn-sm" onclick="switchAdminTab('update')">Kelola Update</button>
             </div>
             <table><thead><tr><th>Judul</th><th>Tanggal</th></tr></thead><tbody id="homeUpdate"></tbody></table>
@@ -139,7 +199,7 @@
           </div>
           <div class="panel">
             <div class="panel-head" id="promptToolbar"><h3>Daftar Prompt</h3></div>
-            <table><thead><tr><th>Judul</th><th>Kategori</th><th>Produk</th><th></th></tr></thead><tbody id="promptTable"></tbody></table>
+            <table><thead><tr><th>Judul</th><th>Kategori</th><th>Produk</th><th>Tanggal Dibuat</th><th></th></tr></thead><tbody id="promptTable"></tbody></table>
           </div>
         </div>
 
@@ -155,7 +215,7 @@
           </div>
           <div class="panel">
             <div class="panel-head" id="kodeAksesToolbar"><h3>Daftar Kode Akses</h3></div>
-            <table><thead><tr><th>Kode</th><th>Produk</th><th>Status</th><th>Dipakai Oleh</th><th></th></tr></thead><tbody id="kodeAksesTable"></tbody></table>
+            <table><thead><tr><th>Kode</th><th>Produk</th><th>Status</th><th>Dipakai Oleh</th><th>Tanggal Dibuat</th><th></th></tr></thead><tbody id="kodeAksesTable"></tbody></table>
           </div>
         </div>
 
@@ -163,7 +223,7 @@
         <div class="tab-view" id="tab-users">
           <div class="panel">
             <div class="panel-head" id="usersToolbar"></div>
-            <table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Status</th><th>Terakhir Login</th><th></th></tr></thead><tbody id="usersTable"></tbody></table>
+            <table><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Status</th><th>Tanggal Daftar</th><th>Terakhir Login</th><th></th></tr></thead><tbody id="usersTable"></tbody></table>
           </div>
         </div>
 
@@ -191,7 +251,12 @@
       produkList: [], selectedProduk: null, modulList: [], selectedModul: null, kontenList: [],
       usersList: [], kodeList: [], promptList: [], updateList: [],
       sort: { users: 'daftar_desc', produk: 'urutan_asc', kodeakses: 'tersedia_dulu', prompt: 'judul_asc', update: 'tanggal_desc' },
-      filter: { users: '', produk: '', kodeakses: '', prompt: '' }
+      filter: { users: '', produk: '', kodeakses: '', prompt: '' },
+      // Sort/filter di panel BERANDA terpisah dari yang di tampilan penuh (di atas),
+      // supaya mengetik di satu panel tidak diam-diam mengubah apa yang tampil
+      // saat user pindah ke tab penuh untuk menu yang sama.
+      homeSort: { users: 'desc', produk: 'desc', kodeakses: 'desc', prompt: 'desc', update: 'desc' },
+      homeFilter: { users: '', produk: '', kodeakses: '', prompt: '' }
     };
 
     const TABS = [
@@ -212,16 +277,19 @@
       ],
       produk: [
         { value: 'urutan_asc', label: 'Urutan' },
-        { value: 'nama_asc', label: 'Nama (A-Z)' }
+        { value: 'nama_asc', label: 'Nama (A-Z)' },
+        { value: 'dibuat_desc', label: 'Terbaru dibuat' }
       ],
       kodeakses: [
         { value: 'tersedia_dulu', label: 'Tersedia dulu' },
         { value: 'kode_asc', label: 'Kode (A-Z)' },
-        { value: 'terpakai_terbaru', label: 'Terpakai terbaru' }
+        { value: 'terpakai_terbaru', label: 'Terpakai terbaru' },
+        { value: 'dibuat_desc', label: 'Terbaru dibuat' }
       ],
       prompt: [
         { value: 'judul_asc', label: 'Judul (A-Z)' },
-        { value: 'kategori_asc', label: 'Kategori' }
+        { value: 'kategori_asc', label: 'Kategori' },
+        { value: 'dibuat_desc', label: 'Terbaru dibuat' }
       ],
       update: [
         { value: 'tanggal_desc', label: 'Terbaru' },
@@ -301,6 +369,35 @@
     function waktuMs(v) {
       const d = new Date(v);
       return isNaN(d.getTime()) ? 0 : d.getTime();
+    }
+
+    /** id tombol ikon sort per panel beranda — nama tidak selalu = nama view (kodeakses -> Kode). */
+    const HOME_SORT_BTN = { users: 'sortIconUsers', produk: 'sortIconProduk', kodeakses: 'sortIconKodeakses', prompt: 'sortIconPrompt', update: 'sortIconUpdate' };
+
+    /** Klik ikon ↕ di panel beranda: balik antara terbaru-dulu dan terlama-dulu. */
+    function toggleHomeSort(view) {
+      STATE.homeSort[view] = STATE.homeSort[view] === 'asc' ? 'desc' : 'asc';
+      const btn = document.getElementById(HOME_SORT_BTN[view]);
+      if (btn) {
+        const asc = STATE.homeSort[view] === 'asc';
+        btn.textContent = asc ? '↑' : '↓';
+        btn.title = asc ? 'Terlama dulu (klik untuk balik)' : 'Terbaru dulu (klik untuk balik)';
+      }
+      renderHomeRowsFor(view);
+    }
+
+    /** Kotak cari kecil di panel beranda. Tidak menembak server — data sudah di cache. */
+    function onHomeFilterChange(view, value) {
+      STATE.homeFilter[view] = value;
+      renderHomeRowsFor(view);
+    }
+
+    function renderHomeRowsFor(view) {
+      if (view === 'users') renderHomeUsersRows();
+      if (view === 'produk') renderHomeProdukRows();
+      if (view === 'kodeakses') renderHomeKodeRows();
+      if (view === 'prompt') renderHomePromptRows();
+      if (view === 'update') renderHomeUpdateRows();
     }
 
     /** Beranda tidak punya tombol kembali; menu lain punya. */
@@ -407,11 +504,16 @@
       return '<div class="stat-card"><div class="stat-num">' + escapeHtml(num) + '</div><div class="stat-label">' + escapeHtml(label) + '</div></div>';
     }
 
-    /** Judul panel + jumlah total, dan teks "…dan N lainnya" di kaki panel. */
-    function setHomeMeta(headId, footId, judul, total, tampil) {
+    /**
+     * Judul panel + jumlah total, dan teks "…dan N lainnya" di kaki panel.
+     * `cocokCount` = jumlah baris yang lolos filter (sebelum dipotong ke
+     * PREVIEW_MAX). Kalau tidak diisi, dianggap sama dengan total.
+     */
+    function setHomeMeta(headId, footId, judul, total, tampil, cocokCount) {
       document.getElementById(headId).innerHTML =
         escapeHtml(judul) + ' <span class="home-count">' + total + '</span>';
-      const sisa = total - tampil;
+      const dasar = (typeof cocokCount === 'number') ? cocokCount : total;
+      const sisa = dasar - tampil;
       document.getElementById(footId).innerHTML = sisa > 0
         ? '<span class="home-more">dan ' + sisa + ' lainnya</span>'
         : '';
@@ -423,39 +525,64 @@
 
     function renderHomeUsers(res) {
       const tbody = document.getElementById('homeUsers');
-      if (!res.success) { tbody.innerHTML = emptyRow(4, 'Gagal memuat: ' + res.message); return; }
-      const list = res.data || [];
-      // User terbaru di atas — yang lama tidak menarik untuk dilihat sekilas.
-      const urut = list.slice().sort(function (a, b) {
-        return new Date(b.tanggal_daftar || 0) - new Date(a.tanggal_daftar || 0);
-      }).slice(0, PREVIEW_MAX);
+      if (!res.success) { tbody.innerHTML = emptyRow(5, 'Gagal memuat: ' + res.message); return; }
+      STATE.usersList = res.data || [];
+      renderHomeUsersRows();
+    }
 
-      setHomeMeta('headUsers', 'footUsers', 'Users', list.length, urut.length);
-      tbody.innerHTML = urut.length === 0
-        ? emptyRow(4, 'Belum ada user.')
-        : urut.map(function (u) {
+    function renderHomeUsersRows() {
+      const tbody = document.getElementById('homeUsers');
+      const q = STATE.homeFilter.users;
+      let list = STATE.usersList.filter(function (u) {
+        return cocokFilter(q, u.nama) || cocokFilter(q, u.email);
+      });
+      list = list.slice().sort(function (a, b) {
+        const d = waktuMs(b.tanggal_daftar) - waktuMs(a.tanggal_daftar);
+        return STATE.homeSort.users === 'asc' ? -d : d;
+      });
+      const tampil = list.slice(0, PREVIEW_MAX);
+
+      setHomeMeta('headUsers', 'footUsers', 'Users', STATE.usersList.length, tampil.length, list.length);
+      tbody.innerHTML = tampil.length === 0
+        ? emptyRow(5, STATE.usersList.length === 0 ? 'Belum ada user.' : 'Tidak ada user yang cocok dengan pencarian.')
+        : tampil.map(function (u) {
             const status = u.status === 'aktif'
               ? '<span class="badge aktif">Aktif</span>'
               : '<span class="badge nonaktif">Nonaktif</span>';
             const role = u.role === 'admin' ? '<span class="badge admin">Admin</span>' : 'Member';
             return '<tr><td>' + escapeHtml(u.nama) + '</td><td>' + escapeHtml(u.email) + '</td>' +
-              '<td>' + role + '</td><td>' + status + '</td></tr>';
+              '<td>' + role + '</td><td>' + status + '</td>' +
+              '<td>' + escapeHtml(formatTanggal(u.tanggal_daftar)) + '</td></tr>';
           }).join('');
     }
 
     function renderHomeProduk(res) {
       const tbody = document.getElementById('homeProduk');
-      if (!res.success) { tbody.innerHTML = emptyRow(2, 'Gagal memuat: ' + res.message); return; }
-      const list = res.data || [];
-      // Sekalian isi cache nama produk — dipakai tabel kode akses di bawah.
-      list.forEach(function (p) { PRODUK_NAMA[p.id] = p.nama; });
+      if (!res.success) { tbody.innerHTML = emptyRow(3, 'Gagal memuat: ' + res.message); return; }
+      STATE.produkList = res.data || [];
+      // Sekalian isi cache nama produk — dipakai tabel kode akses & prompt di beranda.
+      STATE.produkList.forEach(function (p) { PRODUK_NAMA[p.id] = p.nama; });
+      renderHomeProdukRows();
+    }
 
+    function renderHomeProdukRows() {
+      const tbody = document.getElementById('homeProduk');
+      const q = STATE.homeFilter.produk;
+      let list = STATE.produkList.filter(function (p) {
+        return cocokFilter(q, p.nama) || cocokFilter(q, p.kategori);
+      });
+      list = list.slice().sort(function (a, b) {
+        const d = waktuMs(b.tanggal_dibuat) - waktuMs(a.tanggal_dibuat);
+        return STATE.homeSort.produk === 'asc' ? -d : d;
+      });
       const tampil = list.slice(0, PREVIEW_MAX);
-      setHomeMeta('headProduk', 'footProduk', 'Produk', list.length, tampil.length);
+
+      setHomeMeta('headProduk', 'footProduk', 'Produk', STATE.produkList.length, tampil.length, list.length);
       tbody.innerHTML = tampil.length === 0
-        ? emptyRow(2, 'Belum ada produk.')
+        ? emptyRow(3, STATE.produkList.length === 0 ? 'Belum ada produk.' : 'Tidak ada produk yang cocok dengan pencarian.')
         : tampil.map(function (p) {
-            return '<tr><td>' + escapeHtml(p.nama) + '</td><td>' + escapeHtml(p.kategori || '-') + '</td></tr>';
+            return '<tr><td>' + escapeHtml(p.nama) + '</td><td>' + escapeHtml(p.kategori || '-') + '</td>' +
+              '<td>' + escapeHtml(formatTanggal(p.tanggal_dibuat)) + '</td></tr>';
           }).join('');
     }
 
@@ -466,54 +593,94 @@
 
     function renderHomeKode(res) {
       const tbody = document.getElementById('homeKode');
-      if (!res.success) { tbody.innerHTML = emptyRow(4, 'Gagal memuat: ' + res.message); return; }
-      const list = res.data || [];
+      if (!res.success) { tbody.innerHTML = emptyRow(5, 'Gagal memuat: ' + res.message); return; }
+      STATE.kodeList = res.data || [];
+      renderHomeKodeRows();
+    }
 
-      // Kode yang MASIH TERSEDIA didahulukan — itu yang biasanya dicari admin
-      // saat mau membagikan akses ke pembeli baru.
-      const urut = list.slice().sort(function (a, b) {
-        return (isKodeTerpakai(a) ? 1 : 0) - (isKodeTerpakai(b) ? 1 : 0);
-      }).slice(0, PREVIEW_MAX);
+    function renderHomeKodeRows() {
+      const tbody = document.getElementById('homeKode');
+      const q = STATE.homeFilter.kodeakses;
+      let list = STATE.kodeList.filter(function (k) {
+        return cocokFilter(q, k.kode) || cocokFilter(q, namaProduk(k.produk_id)) || cocokFilter(q, k.dipakai_oleh);
+      });
 
-      setHomeMeta('headKode', 'footKode', 'Kode Akses', list.length, urut.length);
-      tbody.innerHTML = urut.length === 0
-        ? emptyRow(4, 'Belum ada kode akses.')
-        : urut.map(function (k) {
+      if (q) {
+        // Sedang mencari: urutkan berdasarkan tanggal seperti panel lain.
+        list = list.slice().sort(function (a, b) {
+          const d = waktuMs(b.tanggal_dibuat) - waktuMs(a.tanggal_dibuat);
+          return STATE.homeSort.kodeakses === 'asc' ? -d : d;
+        });
+      } else {
+        // Tidak sedang mencari: kode yang MASIH TERSEDIA didahulukan — itu yang
+        // biasanya dicari admin saat mau membagikan akses ke pembeli baru.
+        list = list.slice().sort(function (a, b) {
+          return (isKodeTerpakai(a) ? 1 : 0) - (isKodeTerpakai(b) ? 1 : 0);
+        });
+      }
+      const tampil = list.slice(0, PREVIEW_MAX);
+
+      setHomeMeta('headKode', 'footKode', 'Kode Akses', STATE.kodeList.length, tampil.length, list.length);
+      tbody.innerHTML = tampil.length === 0
+        ? emptyRow(5, STATE.kodeList.length === 0 ? 'Belum ada kode akses.' : 'Tidak ada kode yang cocok dengan pencarian.')
+        : tampil.map(function (k) {
             const status = isKodeTerpakai(k)
               ? '<span class="badge nonaktif">Terpakai</span>'
               : '<span class="badge aktif">Tersedia</span>';
             return '<tr><td class="code-mono">' + escapeHtml(k.kode) + '</td>' +
               '<td>' + escapeHtml(namaProduk(k.produk_id)) + '</td>' +
               '<td>' + status + '</td>' +
-              '<td>' + escapeHtml(k.dipakai_oleh || '-') + '</td></tr>';
+              '<td>' + escapeHtml(k.dipakai_oleh || '-') + '</td>' +
+              '<td>' + escapeHtml(formatTanggal(k.tanggal_dibuat)) + '</td></tr>';
           }).join('');
     }
 
     function renderHomePrompt(res) {
       const tbody = document.getElementById('homePrompt');
-      if (!res.success) { tbody.innerHTML = emptyRow(3, 'Gagal memuat: ' + res.message); return; }
-      const list = res.data || [];
-      STATE.promptList = list;
+      if (!res.success) { tbody.innerHTML = emptyRow(4, 'Gagal memuat: ' + res.message); return; }
+      STATE.promptList = res.data || [];
+      renderHomePromptRows();
+    }
 
+    function renderHomePromptRows() {
+      const tbody = document.getElementById('homePrompt');
+      const q = STATE.homeFilter.prompt;
+      let list = STATE.promptList.filter(function (p) {
+        return cocokFilter(q, p.judul) || cocokFilter(q, p.kategori) || cocokFilter(q, namaProduk(p.produk_id));
+      });
+      list = list.slice().sort(function (a, b) {
+        const d = waktuMs(b.tanggal_dibuat) - waktuMs(a.tanggal_dibuat);
+        return STATE.homeSort.prompt === 'asc' ? -d : d;
+      });
       const tampil = list.slice(0, PREVIEW_MAX);
-      setHomeMeta('headPrompt', 'footPrompt', 'Prompt Library', list.length, tampil.length);
+
+      setHomeMeta('headPrompt', 'footPrompt', 'Prompt Library', STATE.promptList.length, tampil.length, list.length);
       tbody.innerHTML = tampil.length === 0
-        ? emptyRow(3, 'Belum ada prompt.')
+        ? emptyRow(4, STATE.promptList.length === 0 ? 'Belum ada prompt.' : 'Tidak ada prompt yang cocok dengan pencarian.')
         : tampil.map(function (p) {
             return '<tr><td>' + escapeHtml(p.judul) + '</td>' +
               '<td><span class="chip">' + escapeHtml(p.kategori || 'Umum') + '</span></td>' +
-              '<td>' + escapeHtml(namaProduk(p.produk_id)) + '</td></tr>';
+              '<td>' + escapeHtml(namaProduk(p.produk_id)) + '</td>' +
+              '<td>' + escapeHtml(formatTanggal(p.tanggal_dibuat)) + '</td></tr>';
           }).join('');
     }
 
     function renderHomeUpdate(res) {
       const tbody = document.getElementById('homeUpdate');
       if (!res.success) { tbody.innerHTML = emptyRow(2, 'Gagal memuat: ' + res.message); return; }
-      const list = res.data || []; // server sudah mengurutkan dari terbaru
-      STATE.updateList = list;
+      STATE.updateList = res.data || [];
+      renderHomeUpdateRows();
+    }
 
+    function renderHomeUpdateRows() {
+      const tbody = document.getElementById('homeUpdate');
+      let list = STATE.updateList.slice().sort(function (a, b) {
+        const d = waktuMs(b.tanggal) - waktuMs(a.tanggal);
+        return STATE.homeSort.update === 'asc' ? -d : d;
+      });
       const tampil = list.slice(0, PREVIEW_MAX);
-      setHomeMeta('headUpdate', 'footUpdate', 'Update', list.length, tampil.length);
+
+      setHomeMeta('headUpdate', 'footUpdate', 'Update', STATE.updateList.length, tampil.length);
       tbody.innerHTML = tampil.length === 0
         ? emptyRow(2, 'Belum ada update.')
         : tampil.map(function (u) {
@@ -598,7 +765,7 @@
         '<div class="form-row single"><div><label>URL Thumbnail (opsional)</label><input id="pThumbnail" placeholder="https://..."></div></div>' +
         '<button class="btn btn-primary btn-sm" onclick="createProduk()">Tambah Produk</button></div>' +
         '<div class="panel"><div class="panel-head" id="produkToolbar"></div>' +
-        '<table><thead><tr><th>Nama</th><th>Kategori</th><th></th></tr></thead><tbody id="produkTableBody"></tbody></table></div>';
+        '<table><thead><tr><th>Nama</th><th>Kategori</th><th>Tanggal Dibuat</th><th></th></tr></thead><tbody id="produkTableBody"></tbody></table></div>';
       document.getElementById('produkArea').innerHTML = html;
       document.getElementById('produkToolbar').innerHTML = toolbarHtml('produk', 'Daftar Produk', true, 'Cari nama atau kategori...');
       renderProdukRows();
@@ -617,19 +784,22 @@
       const sort = STATE.sort.produk;
       if (sort === 'nama_asc') {
         list = list.slice().sort(function (a, b) { return String(a.nama).localeCompare(String(b.nama)); });
+      } else if (sort === 'dibuat_desc') {
+        list = list.slice().sort(function (a, b) { return waktuMs(b.tanggal_dibuat) - waktuMs(a.tanggal_dibuat); });
       } else {
         list = list.slice().sort(function (a, b) { return (a.urutan || 0) - (b.urutan || 0); });
       }
 
       if (list.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="3">' +
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="4">' +
           (STATE.produkList.length === 0 ? 'Belum ada produk.' : 'Tidak ada produk yang cocok dengan pencarian.') + '</td></tr>';
         return;
       }
       tbody.innerHTML = list.map(function (p) {
         // FIX: nama produk dulu di-escape hanya untuk kutip tunggal (escapeQ),
         // sehingga nama berisi < > atau kutip ganda merusak baris tabel.
-        return '<tr><td>' + escapeHtml(p.nama) + '</td><td>' + escapeHtml(p.kategori || '-') + '</td><td class="row-actions">' +
+        return '<tr><td>' + escapeHtml(p.nama) + '</td><td>' + escapeHtml(p.kategori || '-') + '</td>' +
+          '<td>' + escapeHtml(formatTanggal(p.tanggal_dibuat)) + '</td><td class="row-actions">' +
           '<button class="btn btn-outline btn-sm" onclick="openModul(\'' + escapeJs(p.id) + '\', \'' + escapeJs(p.nama) + '\')">Kelola Modul</button>' +
           '<button class="btn btn-outline btn-sm" onclick="deleteProduk(\'' + escapeJs(p.id) + '\')">Hapus</button></td></tr>';
       }).join('');
@@ -830,12 +1000,14 @@
       const sort = STATE.sort.prompt;
       if (sort === 'kategori_asc') {
         list = list.slice().sort(function (a, b) { return String(a.kategori || '').localeCompare(String(b.kategori || '')); });
+      } else if (sort === 'dibuat_desc') {
+        list = list.slice().sort(function (a, b) { return waktuMs(b.tanggal_dibuat) - waktuMs(a.tanggal_dibuat); });
       } else {
         list = list.slice().sort(function (a, b) { return String(a.judul).localeCompare(String(b.judul)); });
       }
 
       if (list.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="4">' +
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">' +
           (STATE.promptList.length === 0 ? 'Belum ada prompt.' : 'Tidak ada prompt yang cocok dengan pencarian.') + '</td></tr>';
         return;
       }
@@ -845,6 +1017,7 @@
         return '<tr><td>' + escapeHtml(p.judul) + '</td>' +
           '<td><span class="chip">' + escapeHtml(p.kategori || 'Umum') + '</span></td>' +
           '<td>' + escapeHtml(namaProduk(p.produk_id)) + '</td>' +
+          '<td>' + escapeHtml(formatTanggal(p.tanggal_dibuat)) + '</td>' +
           '<td><button class="btn btn-outline btn-sm" onclick="deletePrompt(\'' + escapeJs(p.id) + '\')">Hapus</button></td></tr>';
       }).join('');
     }
@@ -910,12 +1083,14 @@
         list = list.slice().sort(function (a, b) { return String(a.kode).localeCompare(String(b.kode)); });
       } else if (sort === 'terpakai_terbaru') {
         list = list.slice().sort(function (a, b) { return waktuMs(b.tanggal_pakai) - waktuMs(a.tanggal_pakai); });
+      } else if (sort === 'dibuat_desc') {
+        list = list.slice().sort(function (a, b) { return waktuMs(b.tanggal_dibuat) - waktuMs(a.tanggal_dibuat); });
       } else {
         list = list.slice().sort(function (a, b) { return (isKodeTerpakai(a) ? 1 : 0) - (isKodeTerpakai(b) ? 1 : 0); });
       }
 
       if (list.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">' +
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">' +
           (STATE.kodeList.length === 0 ? 'Belum ada kode akses.' : 'Tidak ada kode yang cocok dengan pencarian.') + '</td></tr>';
         return;
       }
@@ -927,6 +1102,7 @@
           '<td>' + escapeHtml(namaProduk(k.produk_id)) + '</td>' +
           '<td>' + status + '</td>' +
           '<td>' + escapeHtml(k.dipakai_oleh || '-') + '</td>' +
+          '<td>' + escapeHtml(formatTanggal(k.tanggal_dibuat)) + '</td>' +
           '<td><button class="btn btn-outline btn-sm" onclick="deleteKode(\'' + escapeJs(k.kode) + '\')">Hapus</button></td></tr>';
       }).join('');
     }
@@ -991,7 +1167,7 @@
       }
 
       if (list.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">' +
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">' +
           (STATE.usersList.length === 0 ? 'Belum ada user.' : 'Tidak ada user yang cocok dengan pencarian.') + '</td></tr>';
         return;
       }
@@ -1011,7 +1187,8 @@
             '<button class="btn btn-outline btn-sm" onclick="deleteUser(\'' + escapeJs(u.id) + '\')">Hapus</button>';
 
         return '<tr><td>' + escapeHtml(u.nama) + '</td><td>' + escapeHtml(u.email) + '</td><td>' + roleBadge + '</td>' +
-          '<td>' + statusBadge + '</td><td>' + escapeHtml(formatTanggal(u.terakhir_login)) + '</td>' +
+          '<td>' + statusBadge + '</td><td>' + escapeHtml(formatTanggal(u.tanggal_daftar)) + '</td>' +
+          '<td>' + escapeHtml(formatTanggal(u.terakhir_login)) + '</td>' +
           '<td class="row-actions">' + aksi + '</td></tr>';
       }).join('');
     }
