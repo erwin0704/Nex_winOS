@@ -33,9 +33,7 @@
               <label for="loginPassword">Password</label>
               <div class="password-field">
                 <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="••••••••">
-                <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Tampilkan password">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                </button>
+                <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Tampilkan password"></button>
               </div>
             </div>
             <div class="forgot-trigger">
@@ -56,10 +54,8 @@
             <div class="field">
               <label for="daftarPassword">Buat Password</label>
               <div class="password-field">
-                <input type="password" id="daftarPassword" required autocomplete="new-password" placeholder="Minimal 6 karakter">
-                <button type="button" class="password-toggle" onclick="togglePassword('daftarPassword', this)" aria-label="Tampilkan password">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                </button>
+                <input type="password" id="daftarPassword" required minlength="6" autocomplete="new-password" placeholder="Minimal 6 karakter">
+                <button type="button" class="password-toggle" onclick="togglePassword('daftarPassword', this)" aria-label="Tampilkan password"></button>
               </div>
             </div>
             <div class="field">
@@ -104,10 +100,8 @@
             <div class="field">
               <label for="resetPasswordBaru">Password Baru</label>
               <div class="password-field">
-                <input type="password" id="resetPasswordBaru" required placeholder="Minimal 6 karakter">
-                <button type="button" class="password-toggle" onclick="togglePassword('resetPasswordBaru', this)" aria-label="Tampilkan password">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                </button>
+                <input type="password" id="resetPasswordBaru" required minlength="6" autocomplete="new-password" placeholder="Minimal 6 karakter">
+                <button type="button" class="password-toggle" onclick="togglePassword('resetPasswordBaru', this)" aria-label="Tampilkan password"></button>
               </div>
             </div>
             <button type="submit" class="btn btn-primary btn-block" id="btnReset">Simpan Password Baru</button>
@@ -120,13 +114,26 @@
 
   <script src="assets/api.js"></script>
   <script>
-    // Kalau ada ?reset=xxx di URL (dari link email), langsung tampilkan form set password baru
+    const EYE_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    const EYE_CLOSED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.6 20.6 0 0 1 5.06-6.06M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a20.6 20.6 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+
+    document.querySelectorAll('.password-toggle').forEach(function (b) { b.innerHTML = EYE_OPEN; });
+
+    function togglePassword(inputId, btnEl) {
+      const input = document.getElementById(inputId);
+      const isHidden = input.type === 'password';
+      input.type = isHidden ? 'text' : 'password';
+      btnEl.innerHTML = isHidden ? EYE_CLOSED : EYE_OPEN;
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const resetToken = urlParams.get('reset');
-    if (resetToken) switchTab('reset');
 
-    // Kalau sudah login, langsung ke dashboard (tidak perlu login ulang)
-    if (getToken() && !resetToken) {
+    if (resetToken) {
+      // FIX: token sesi lama harus dibersihkan saat membuka link reset, kalau tidak
+      // baris di bawah bisa melempar user ke dashboard dan link reset jadi mubazir.
+      switchTab('reset');
+    } else if (getToken()) {
       window.location.href = 'dashboard.html';
     }
 
@@ -165,7 +172,7 @@
 
         if (res.success) {
           setToken(res.token);
-          setSession({ nama: res.nama, role: res.role, email: res.email });
+          setSession({ nama: res.nama, role: res.role, email: res.email, avatar: res.avatar || '' });
           showLoading('Berhasil! Mengarahkan ke dashboard...');
           window.location.href = 'dashboard.html';
         } else {
@@ -184,6 +191,15 @@
       e.preventDefault();
       const btn = document.getElementById('btnDaftar');
       hideFormMessage('formMsgAuth');
+
+      // FIX: validasi panjang password dulu hanya ada di server — user harus
+      // menunggu round-trip penuh untuk tahu passwordnya terlalu pendek.
+      const pwd = document.getElementById('daftarPassword').value;
+      if (pwd.length < 6) {
+        showFormMessage('formMsgAuth', 'Password minimal 6 karakter.', 'error');
+        return false;
+      }
+
       setButtonLoading(btn, true, 'Membuat akun...');
       showLoading('Membuat akun kamu...');
 
@@ -191,16 +207,16 @@
         const res = await apiPost('register', {
           nama: document.getElementById('daftarNama').value,
           email: document.getElementById('daftarEmail').value,
-          password: document.getElementById('daftarPassword').value,
-          kodeAkses: document.getElementById('daftarKode').value
+          password: pwd,
+          kodeAkses: document.getElementById('daftarKode').value.trim().toUpperCase()
         });
         setButtonLoading(btn, false);
         hideLoading();
 
         if (res.success) {
-          showFormMessage('formMsgAuth', res.message + ' Silakan masuk.', 'success');
+          showFormMessage('formMsgAuth', res.message, 'success');
           document.getElementById('formDaftar').reset();
-          setTimeout(function () { switchTab('login'); }, 1200);
+          setTimeout(function () { switchTab('login'); }, 1400);
         } else {
           showFormMessage('formMsgAuth', res.message, 'error');
         }
@@ -223,8 +239,8 @@
         const res = await apiPost('requestPasswordReset', { email: document.getElementById('lupaEmail').value });
         setButtonLoading(btn, false);
         hideLoading();
-        showFormMessage('formMsgLupa', res.message, 'success');
-        document.getElementById('formLupa').reset();
+        showFormMessage('formMsgLupa', res.message, res.success ? 'success' : 'error');
+        if (res.success) document.getElementById('formLupa').reset();
       } catch (err) {
         setButtonLoading(btn, false);
         hideLoading();
@@ -246,12 +262,16 @@
           newPassword: document.getElementById('resetPasswordBaru').value
         });
         setButtonLoading(btn, false);
+        hideLoading();
 
         if (res.success) {
           showFormMessage('formMsgReset', res.message, 'success');
+          // FIX: sesi lama dibersihkan supaya tidak langsung dilempar ke dashboard
+          // dengan token lama setelah reset password.
+          clearToken();
+          localStorage.removeItem('member_session');
           setTimeout(function () { window.location.href = 'login.html'; }, 1500);
         } else {
-          hideLoading();
           showFormMessage('formMsgReset', res.message, 'error');
         }
       } catch (err) {
@@ -260,16 +280,6 @@
         showFormMessage('formMsgReset', 'Gagal terhubung ke server: ' + err.message, 'error');
       }
       return false;
-    }
-
-    const EYE_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
-    const EYE_CLOSED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.6 20.6 0 0 1 5.06-6.06M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a20.6 20.6 0 0 1-3.22 4.44M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
-
-    function togglePassword(inputId, btnEl) {
-      const input = document.getElementById(inputId);
-      const isHidden = input.type === 'password';
-      input.type = isHidden ? 'text' : 'password';
-      btnEl.innerHTML = isHidden ? EYE_CLOSED : EYE_OPEN;
     }
   </script>
 </body>
