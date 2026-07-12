@@ -108,31 +108,54 @@ function handleSessionExpired(res) {
 }
 
 /* ============================================================
-   AUTENTIKASI (token disimpan di localStorage)
+   AUTENTIKASI (token & sesi disimpan di localStorage ATAU sessionStorage,
+   tergantung centang "Ingat saya" saat login)
    ============================================================ */
 
-function getToken() {
-  return localStorage.getItem('member_token') || '';
+/**
+ * BARU: kalau "Ingat saya" TIDAK dicentang, token disimpan di sessionStorage
+ * (otomatis hilang saat tab/browser ditutup) alih-alih localStorage (bertahan
+ * selamanya). Preferensinya sendiri harus disimpan di localStorage — kalau
+ * tidak, browser tidak akan tahu ke storage mana harus mencari token saat
+ * halaman berikutnya dibuka.
+ */
+function authStorage_() {
+  return localStorage.getItem('remember_pref') === 'session' ? sessionStorage : localStorage;
 }
 
-function setToken(token) {
-  localStorage.setItem('member_token', token);
+function getToken() {
+  return authStorage_().getItem('member_token') || '';
+}
+
+function setToken(token, remember) {
+  localStorage.setItem('remember_pref', remember === false ? 'session' : 'local');
+  authStorage_().setItem('member_token', token);
 }
 
 function clearToken() {
+  // Bersihkan dari KEDUA storage — supaya logout tetap tuntas apa pun
+  // preferensi yang dipakai saat login sebelumnya.
   localStorage.removeItem('member_token');
+  sessionStorage.removeItem('member_token');
+  localStorage.removeItem('remember_pref');
 }
 
 function getSession() {
   try {
-    return JSON.parse(localStorage.getItem('member_session') || 'null');
+    return JSON.parse(authStorage_().getItem('member_session') || 'null');
   } catch (err) {
     return null;
   }
 }
 
 function setSession(session) {
-  localStorage.setItem('member_session', JSON.stringify(session));
+  authStorage_().setItem('member_session', JSON.stringify(session));
+}
+
+/** Hapus sesi dari kedua storage sekaligus — dipakai saat logout / reset password. */
+function clearSession() {
+  localStorage.removeItem('member_session');
+  sessionStorage.removeItem('member_session');
 }
 
 /** Halaman yang WAJIB login. */
@@ -168,7 +191,7 @@ async function logout() {
     // Tetap lanjut logout walau request gagal — yang penting sisi lokal bersih
   }
   clearToken();
-  localStorage.removeItem('member_session');
+  clearSession();
   window.location.href = 'index.html';
 }
 
@@ -301,6 +324,8 @@ const ICONS = {
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.42.68.7 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>',
   logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg>',
   chevronLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>',
+  power: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>',
   chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>',
   key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"></circle><path d="m10.5 12.5 8-8"></path><path d="m17 6 3 3"></path><path d="m14 9 2 2"></path></svg>',
@@ -315,12 +340,29 @@ const ICONS = {
   download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
   // FIX: dulu ICONS.camera dipakai di mountSidebar tapi TIDAK PERNAH didefinisikan
   //      -> tombol "ganti foto profil" merender teks "undefined".
-  camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>'
+  camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>',
+  whatsapp: '<svg viewBox="0 0 32 32" fill="currentColor"><path d="M16.01 3C9.38 3 4 8.38 4 15.01c0 2.28.63 4.4 1.72 6.22L4 29l7.94-1.66a11.9 11.9 0 0 0 4.07.71h.01c6.63 0 12-5.38 12-12.01C28.02 8.38 22.64 3 16.01 3Zm0 21.9h-.01a9.9 9.9 0 0 1-5.05-1.39l-.36-.21-3.75.98 1-3.66-.24-.38a9.87 9.87 0 0 1-1.53-5.24c0-5.47 4.46-9.92 9.94-9.92 2.65 0 5.14 1.04 7.02 2.92a9.86 9.86 0 0 1 2.91 7.02c0 5.47-4.46 9.88-9.93 9.88Zm5.44-7.42c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.24-.46-2.37-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.87 1.21 3.07c.15.2 2.09 3.19 5.07 4.47.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35Z"></path></svg>'
 };
 
 /* ============================================================
    SIDEBAR (dipakai di dashboard/produk/video/prompt/admin)
    ============================================================ */
+
+/**
+ * Isi sebuah elemen dengan foto profil (kalau ada) atau inisial nama.
+ * BARU: sebelumnya avatar besar di sapaan dashboard.html selalu diisi
+ * inisial huruf lewat textContent, tidak pernah dicek apakah session.avatar
+ * ada — jadi foto yang sudah diupload user tidak pernah muncul di situ.
+ * Sekarang satu fungsi ini dipakai di semua tempat avatar ditampilkan.
+ */
+function renderAvatarInto(elementId, session) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const nama = (session && session.nama) || '?';
+  el.innerHTML = (session && session.avatar)
+    ? '<img src="' + escapeAttr(session.avatar) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+    : escapeHtml(nama.charAt(0).toUpperCase());
+}
 
 function mountSidebar(activeKey) {
   const mountEl = document.getElementById('sidebarMount');
@@ -344,6 +386,8 @@ function mountSidebar(activeKey) {
       '</a>';
   }).join('');
 
+  // Dipakai juga oleh renderAvatarInto() di tempat lain — dibiarkan inline
+  // di sini karena avatarHtml perlu disisipkan langsung ke string outerHTML.
   const avatarHtml = session.avatar
     ? '<img src="' + escapeAttr(session.avatar) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
     : escapeHtml((nama || '?').charAt(0).toUpperCase());
@@ -414,6 +458,36 @@ function mountSidebar(activeKey) {
   if (toggleBtn) toggleBtn.style.transform = collapsed ? 'rotate(180deg)' : 'rotate(0deg)';
 
   updateThemeSwitchUI();
+  mountWhatsappButton();
+}
+
+/**
+ * Tombol bantuan mengambang di kanan-bawah, dipanggil otomatis dari
+ * mountSidebar() supaya muncul di semua halaman member tanpa perlu
+ * ditambahkan satu per satu. Linknya diatur admin lewat Admin Panel
+ * (Pengaturan) — kalau belum diisi, tombol tidak ditampilkan sama sekali.
+ */
+async function mountWhatsappButton() {
+  if (document.getElementById('waFloatBtn')) return; // sudah ada, jangan dobel
+  try {
+    const res = await apiGet('getPublicSettings', {});
+    if (!res.success) return;
+    const link = (res.data && res.data.wa_link) || '';
+    if (!link) return; // admin belum mengisi link WA — jangan tampilkan tombol kosong
+
+    const a = document.createElement('a');
+    a.id = 'waFloatBtn';
+    a.href = link;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.title = 'Hubungi kami di WhatsApp';
+    a.setAttribute('aria-label', 'Hubungi kami di WhatsApp');
+    a.innerHTML = ICONS.whatsapp;
+    document.body.appendChild(a);
+  } catch (err) {
+    // Gagal memuat pengaturan bukan alasan untuk mengganggu halaman —
+    // tombol cukup tidak muncul, tanpa toast error.
+  }
 }
 
 /* ============================================================
@@ -455,8 +529,10 @@ async function saveAvatar(dataUrl) {
     const session = getSession() || {};
     session.avatar = dataUrl;
     setSession(session);
-    document.querySelectorAll('#sidebarAvatar, #popupAvatar').forEach(function (el) {
-      el.innerHTML = '<img src="' + escapeAttr(dataUrl) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    // FIX: dulu daftar ini sengaja tidak menyertakan #greetingAvatar (foto
+    // besar di sapaan dashboard), jadi foto baru tidak pernah tampil di sana.
+    ['sidebarAvatar', 'popupAvatar', 'greetingAvatar'].forEach(function (id) {
+      renderAvatarInto(id, session);
     });
     showFormMessage('profileMsg', 'Foto profil berhasil diperbarui.', 'success');
   } catch (err) {
@@ -482,11 +558,11 @@ async function saveProfile() {
     document.querySelectorAll('.sidebar-user-name').forEach(function (el) { el.textContent = nama; });
     const greet = document.getElementById('greetingNama');
     if (greet) greet.textContent = nama;
-    if (!session.avatar) {
-      document.querySelectorAll('#sidebarAvatar, #popupAvatar, #greetingAvatar').forEach(function (el) {
-        el.textContent = nama.charAt(0).toUpperCase();
-      });
-    }
+    // Selalu render ulang (bukan hanya saat tidak ada avatar) — kalau session
+    // punya avatar, renderAvatarInto akan mempertahankan foto, bukan menimpanya.
+    ['sidebarAvatar', 'popupAvatar', 'greetingAvatar'].forEach(function (id) {
+      renderAvatarInto(id, session);
+    });
   } catch (err) {
     hideLoading();
     showFormMessage('profileMsg', 'Gagal terhubung ke server: ' + err.message, 'error');

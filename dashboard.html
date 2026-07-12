@@ -72,17 +72,12 @@
 
       <div class="section-divider"></div>
 
-      <div class="section-title"><span class="section-ic" data-ic="gift"></span>Bonus &amp; Bantuan</div>
-      <div class="info-grid">
+      <div class="section-title"><span class="section-ic" data-ic="gift"></span>Bonus</div>
+      <div class="info-grid" style="grid-template-columns:1fr;max-width:360px;">
         <div class="info-card">
           <h3><span class="section-ic" data-ic="gift"></span>Bonus Eksklusif</h3>
           <p>Cek koleksi template &amp; prompt bonus yang tersedia untuk member.</p>
           <a href="prompt.html" class="btn btn-primary btn-sm">Lihat Bonus</a>
-        </div>
-        <div class="info-card" style="background:var(--bg);border:1px solid var(--border);">
-          <h3><span class="section-ic" data-ic="help"></span>Butuh Bantuan?</h3>
-          <p>Ada kendala akses atau pertanyaan seputar materi? Hubungi kami langsung.</p>
-          <a href="mailto:admin@email.com" class="btn btn-outline btn-sm">Hubungi Admin</a>
         </div>
       </div>
     </main>
@@ -104,7 +99,9 @@
 
       if (session) {
         document.getElementById('greetingNama').textContent = session.nama || '';
-        document.getElementById('greetingAvatar').textContent = (session.nama || '?').charAt(0).toUpperCase();
+        // FIX: dulu selalu pakai inisial huruf via textContent, foto profil
+        // yang sudah diupload tidak pernah tertarik ke sini.
+        renderAvatarInto('greetingAvatar', session);
       }
       loadDashboard();
     }

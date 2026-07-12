@@ -15,7 +15,8 @@
     .breadcrumb a { color: var(--accent); cursor: pointer; }
 
     /* ---- Bar navigasi: tombol kembali (menggantikan deretan tab) ---- */
-    .nav-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; min-height: 34px; }
+    .nav-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; min-height: 34px; }
+    .nav-bar-left { display: flex; align-items: center; gap: 12px; }
     .back-btn {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 8px 14px; border-radius: 99px; font-size: 13px; font-weight: 600;
@@ -46,6 +47,18 @@
       display: inline-flex; align-items: center; justify-content: center;
     }
     .sort-icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Tombol aksi tabel (Kelola/Hapus/Aktifkan) sebagai ikon + tooltip native (title). */
+    .icon-action-btn {
+      width: 30px; height: 30px; flex-shrink: 0; padding: 0;
+      border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+      color: var(--ink-soft); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .icon-action-btn svg { width: 15px; height: 15px; }
+    .icon-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .icon-action-btn.danger:hover { border-color: #F0506E; color: #F0506E; }
+    .row-actions { display: flex; gap: 6px; align-items: center; }
 
     /* Kotak cari ringkas dengan ikon kaca pembesar, dipakai di panel beranda. */
     .home-search-wrap { position: relative; display: inline-flex; align-items: center; }
@@ -241,6 +254,25 @@
           </div>
         </div>
 
+        <!-- ========== PENGATURAN ========== -->
+        <div class="tab-view" id="tab-pengaturan">
+          <div class="panel" style="max-width:520px;">
+            <div class="panel-head"><h3>Tombol Bantuan WhatsApp</h3></div>
+            <p style="font-size:13px;color:var(--ink-soft);margin:-6px 0 14px;">
+              Kalau diisi, tombol bantuan mengambang akan muncul di kanan-bawah semua
+              halaman member dan mengarah ke link ini. Kosongkan untuk menyembunyikan tombolnya.
+            </p>
+            <div class="form-row single">
+              <div>
+                <label>Link WhatsApp Admin</label>
+                <input id="waLinkInput" placeholder="https://wa.me/6281234567890">
+              </div>
+            </div>
+            <div id="pengaturanMsg" class="form-msg"></div>
+            <button class="btn btn-primary btn-sm" onclick="savePengaturan()">Simpan</button>
+          </div>
+        </div>
+
       </div>
     </main>
   </div>
@@ -265,7 +297,8 @@
       { key: 'prompt', label: 'Prompt Library', icon: 'list' },
       { key: 'kodeakses', label: 'Kode Akses', icon: 'key' },
       { key: 'users', label: 'Users', icon: 'users' },
-      { key: 'update', label: 'Update', icon: 'bell' }
+      { key: 'update', label: 'Update', icon: 'bell' },
+      { key: 'pengaturan', label: 'Pengaturan', icon: 'settings' }
     ];
 
     const SORT_OPTIONS = {
@@ -400,14 +433,18 @@
       if (view === 'update') renderHomeUpdateRows();
     }
 
-    /** Beranda tidak punya tombol kembali; menu lain punya. */
+    /** Beranda tidak punya tombol kembali; menu lain punya. Ikon gear di kanan selalu ada. */
     function renderNav(tab) {
       const bar = document.getElementById('navBar');
-      if (tab === 'statistik') { bar.innerHTML = ''; return; }
-      bar.innerHTML =
-        '<button class="back-btn" onclick="switchAdminTab(\'statistik\')">' +
-        '<span aria-hidden="true">←</span><span>Beranda</span></button>' +
-        '<span class="nav-title">' + escapeHtml(labelTab(tab)) + '</span>';
+      const kiri = tab === 'statistik'
+        ? ''
+        : '<button class="back-btn" onclick="switchAdminTab(\'statistik\')">' +
+          '<span aria-hidden="true">←</span><span>Beranda</span></button>' +
+          '<span class="nav-title">' + escapeHtml(labelTab(tab)) + '</span>';
+      const kanan = tab === 'pengaturan'
+        ? ''
+        : '<button class="back-btn" onclick="switchAdminTab(\'pengaturan\')" title="Pengaturan" aria-label="Pengaturan">' + ICONS.settings + '</button>';
+      bar.innerHTML = '<div class="nav-bar-left">' + kiri + '</div>' + kanan;
     }
 
     function switchAdminTab(tab) {
@@ -421,6 +458,7 @@
 
     function loadTab(tab) {
       if (tab === 'statistik') loadBeranda();
+      if (tab === 'pengaturan') loadPengaturan();
       if (tab === 'produk') loadProdukList();
       if (tab === 'prompt') loadPromptLibrary();
       if (tab === 'kodeakses') loadKodeAkses();
@@ -800,8 +838,8 @@
         // sehingga nama berisi < > atau kutip ganda merusak baris tabel.
         return '<tr><td>' + escapeHtml(p.nama) + '</td><td>' + escapeHtml(p.kategori || '-') + '</td>' +
           '<td>' + escapeHtml(formatTanggal(p.tanggal_dibuat)) + '</td><td class="row-actions">' +
-          '<button class="btn btn-outline btn-sm" onclick="openModul(\'' + escapeJs(p.id) + '\', \'' + escapeJs(p.nama) + '\')">Kelola Modul</button>' +
-          '<button class="btn btn-outline btn-sm" onclick="deleteProduk(\'' + escapeJs(p.id) + '\')">Hapus</button></td></tr>';
+          '<button class="icon-action-btn" onclick="openModul(\'' + escapeJs(p.id) + '\', \'' + escapeJs(p.nama) + '\')" title="Kelola modul" aria-label="Kelola modul">' + ICONS.settings + '</button>' +
+          '<button class="icon-action-btn danger" onclick="deleteProduk(\'' + escapeJs(p.id) + '\')" title="Hapus produk" aria-label="Hapus produk">' + ICONS.trash + '</button></td></tr>';
       }).join('');
     }
 
@@ -865,8 +903,8 @@
       } else {
         STATE.modulList.slice().sort(function (a, b) { return (a.urutan || 0) - (b.urutan || 0); }).forEach(function (m) {
           html += '<tr><td>' + escapeHtml(m.nama_modul) + '</td><td>' + escapeHtml(m.urutan) + '</td><td class="row-actions">' +
-            '<button class="btn btn-outline btn-sm" onclick="openKonten(\'' + escapeJs(m.id) + '\', \'' + escapeJs(m.nama_modul) + '\')">Kelola Konten</button>' +
-            '<button class="btn btn-outline btn-sm" onclick="deleteModul(\'' + escapeJs(m.id) + '\')">Hapus</button></td></tr>';
+            '<button class="icon-action-btn" onclick="openKonten(\'' + escapeJs(m.id) + '\', \'' + escapeJs(m.nama_modul) + '\')" title="Kelola konten" aria-label="Kelola konten">' + ICONS.settings + '</button>' +
+            '<button class="icon-action-btn danger" onclick="deleteModul(\'' + escapeJs(m.id) + '\')" title="Hapus modul" aria-label="Hapus modul">' + ICONS.trash + '</button></td></tr>';
         });
       }
       html += '</tbody></table></div>';
@@ -936,7 +974,7 @@
       } else {
         STATE.kontenList.slice().sort(function (a, b) { return (a.urutan || 0) - (b.urutan || 0); }).forEach(function (k) {
           html += '<tr><td><span class="chip">' + escapeHtml(k.tipe) + '</span></td><td>' + escapeHtml(k.judul) + '</td><td class="row-actions">' +
-            '<button class="btn btn-outline btn-sm" onclick="deleteKonten(\'' + escapeJs(k.id) + '\')">Hapus</button></td></tr>';
+            '<button class="icon-action-btn danger" onclick="deleteKonten(\'' + escapeJs(k.id) + '\')" title="Hapus konten" aria-label="Hapus konten">' + ICONS.trash + '</button></td></tr>';
         });
       }
       html += '</tbody></table></div>';
@@ -1018,7 +1056,7 @@
           '<td><span class="chip">' + escapeHtml(p.kategori || 'Umum') + '</span></td>' +
           '<td>' + escapeHtml(namaProduk(p.produk_id)) + '</td>' +
           '<td>' + escapeHtml(formatTanggal(p.tanggal_dibuat)) + '</td>' +
-          '<td><button class="btn btn-outline btn-sm" onclick="deletePrompt(\'' + escapeJs(p.id) + '\')">Hapus</button></td></tr>';
+          '<td><button class="icon-action-btn danger" onclick="deletePrompt(\'' + escapeJs(p.id) + '\')" title="Hapus prompt" aria-label="Hapus prompt">' + ICONS.trash + '</button></td></tr>';
       }).join('');
     }
 
@@ -1103,7 +1141,7 @@
           '<td>' + status + '</td>' +
           '<td>' + escapeHtml(k.dipakai_oleh || '-') + '</td>' +
           '<td>' + escapeHtml(formatTanggal(k.tanggal_dibuat)) + '</td>' +
-          '<td><button class="btn btn-outline btn-sm" onclick="deleteKode(\'' + escapeJs(k.kode) + '\')">Hapus</button></td></tr>';
+          '<td><button class="icon-action-btn danger" onclick="deleteKode(\'' + escapeJs(k.kode) + '\')" title="Hapus kode" aria-label="Hapus kode">' + ICONS.trash + '</button></td></tr>';
       }).join('');
     }
 
@@ -1183,8 +1221,8 @@
         const isSelf = String(u.email).toLowerCase() === String(me.email || '').toLowerCase();
         const aksi = isSelf
           ? '<span style="font-size:12px;color:var(--ink-soft);">Akun kamu</span>'
-          : '<button class="btn btn-outline btn-sm" onclick="toggleUserStatus(\'' + escapeJs(u.id) + '\', \'' + toggleStatus + '\')">' + toggleLabel + '</button>' +
-            '<button class="btn btn-outline btn-sm" onclick="deleteUser(\'' + escapeJs(u.id) + '\')">Hapus</button>';
+          : '<button class="icon-action-btn" onclick="toggleUserStatus(\'' + escapeJs(u.id) + '\', \'' + toggleStatus + '\')" title="' + toggleLabel + '" aria-label="' + toggleLabel + '">' + ICONS.power + '</button>' +
+            '<button class="icon-action-btn danger" onclick="deleteUser(\'' + escapeJs(u.id) + '\')" title="Hapus user" aria-label="Hapus user">' + ICONS.trash + '</button>';
 
         return '<tr><td>' + escapeHtml(u.nama) + '</td><td>' + escapeHtml(u.email) + '</td><td>' + roleBadge + '</td>' +
           '<td>' + statusBadge + '</td><td>' + escapeHtml(formatTanggal(u.tanggal_daftar)) + '</td>' +
@@ -1242,7 +1280,7 @@
       }
       tbody.innerHTML = list.map(function (u) {
         return '<tr><td>' + escapeHtml(u.judul) + '</td><td>' + escapeHtml(formatTanggal(u.tanggal)) + '</td>' +
-          '<td><button class="btn btn-outline btn-sm" onclick="deleteUpdate(\'' + escapeJs(u.id) + '\')">Hapus</button></td></tr>';
+          '<td><button class="icon-action-btn danger" onclick="deleteUpdate(\'' + escapeJs(u.id) + '\')" title="Hapus update" aria-label="Hapus update">' + ICONS.trash + '</button></td></tr>';
       }).join('');
     }
 
@@ -1274,6 +1312,37 @@
         showToast('Update dihapus.');
         loadUpdate();
       } catch (err) { showToast('Gagal: ' + err.message); }
+    }
+
+    /* ---------------- PENGATURAN ---------------- */
+    async function loadPengaturan() {
+      try {
+        const res = await apiGet('adminGetSettings', {});
+        hideLoading();
+        if (handleSessionExpired(res)) return;
+        if (!res.success) { showToast('Gagal memuat pengaturan: ' + res.message); return; }
+        document.getElementById('waLinkInput').value = (res.data && res.data.wa_link) || '';
+      } catch (err) { hideLoading(); showToast('Gagal memuat pengaturan: ' + err.message); }
+    }
+
+    async function savePengaturan() {
+      const waLink = document.getElementById('waLinkInput').value.trim();
+      // Validasi ringan di sisi browser — server tetap memvalidasi ulang.
+      if (waLink && waLink.indexOf('http') !== 0) {
+        showFormMessage('pengaturanMsg', 'Link harus diawali https://', 'error');
+        return;
+      }
+      showLoading('Menyimpan pengaturan...');
+      try {
+        const res = await apiPost('adminUpdateSettings', { data: { wa_link: waLink } });
+        hideLoading();
+        if (handleSessionExpired(res)) return;
+        if (!res.success) { showFormMessage('pengaturanMsg', res.message, 'error'); return; }
+        showFormMessage('pengaturanMsg', 'Pengaturan disimpan. Tombol WA akan muncul di halaman member saat dibuka ulang.', 'success');
+      } catch (err) {
+        hideLoading();
+        showFormMessage('pengaturanMsg', 'Gagal terhubung ke server: ' + err.message, 'error');
+      }
     }
   </script>
 </body>

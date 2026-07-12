@@ -17,10 +17,7 @@
 
         <!-- ============ VIEW: LOGIN & DAFTAR ============ -->
         <div id="viewAuth" class="view active">
-          <div class="auth-tabs">
-            <div class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Masuk</div>
-            <div class="auth-tab" id="tabDaftar" onclick="switchTab('daftar')">Buat Akun</div>
-          </div>
+          <div class="auth-brand">Studio Kamu<span style="color:var(--accent)">.</span></div>
 
           <div id="formMsgAuth" class="form-msg"></div>
 
@@ -36,6 +33,10 @@
                 <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Tampilkan password"></button>
               </div>
             </div>
+            <label class="checkbox-field">
+              <input type="checkbox" id="rememberMe" checked>
+              <span>Ingatkan saya</span>
+            </label>
             <div class="forgot-trigger">
               <button type="button" class="link-btn" onclick="switchTab('lupa')">Lupa password?</button>
             </div>
@@ -147,8 +148,6 @@
 
       document.getElementById('viewAuth').classList.add('active');
       const isLogin = tab === 'login';
-      document.getElementById('tabLogin').classList.toggle('active', isLogin);
-      document.getElementById('tabDaftar').classList.toggle('active', !isLogin);
       document.getElementById('formLogin').style.display = isLogin ? 'block' : 'none';
       document.getElementById('formDaftar').style.display = isLogin ? 'none' : 'block';
       document.getElementById('footLogin').style.display = isLogin ? 'block' : 'none';
@@ -171,7 +170,8 @@
         setButtonLoading(btn, false);
 
         if (res.success) {
-          setToken(res.token);
+          const remember = document.getElementById('rememberMe').checked;
+          setToken(res.token, remember);
           setSession({ nama: res.nama, role: res.role, email: res.email, avatar: res.avatar || '' });
           showLoading('Berhasil! Mengarahkan ke dashboard...');
           window.location.href = 'dashboard.html';
@@ -269,7 +269,7 @@
           // FIX: sesi lama dibersihkan supaya tidak langsung dilempar ke dashboard
           // dengan token lama setelah reset password.
           clearToken();
-          localStorage.removeItem('member_session');
+          clearSession();
           setTimeout(function () { window.location.href = 'login.html'; }, 1500);
         } else {
           showFormMessage('formMsgReset', res.message, 'error');

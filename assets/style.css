@@ -202,9 +202,10 @@ footer { border-top: 1px solid var(--border); padding: 32px 0; font-size: 13px; 
 .auth-card { width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 36px; box-shadow: var(--shadow); }
 .auth-back { font-size: 13px; color: var(--ink-soft); margin-bottom: 20px; display: inline-flex; align-items: center; gap: 6px; }
 .auth-back:hover { color: var(--accent); }
-.auth-tabs { display: flex; gap: 4px; background: var(--bg); border-radius: 10px; padding: 4px; margin-bottom: 24px; }
-.auth-tab { flex: 1; text-align: center; padding: 9px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
-.auth-tab.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.auth-brand { font-family: var(--font-display); font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 24px; color: var(--ink); }
+
+.checkbox-field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); cursor: pointer; margin: -4px 0 16px; user-select: none; }
+.checkbox-field input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0; }
 .field { margin-bottom: 16px; }
 .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
 .field input, .field select, .field textarea {
@@ -451,6 +452,23 @@ body.app-page { background: var(--bg-gradient); }
 
 /* Tombol aksi form butuh jarak dari input di atasnya. */
 .panel .form-row + .btn { margin-top: 4px; }
+
+/* Tombol bantuan WhatsApp mengambang — dipasang otomatis oleh mountSidebar()
+   di semua halaman member. #25D366 = warna brand resmi WhatsApp. */
+#waFloatBtn {
+  position: fixed; right: 22px; bottom: 22px; z-index: 999;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: #25D366; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+#waFloatBtn svg { width: 28px; height: 28px; }
+#waFloatBtn:hover { transform: scale(1.07); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); }
+@media (max-width: 640px) {
+  #waFloatBtn { right: 16px; bottom: 16px; width: 48px; height: 48px; }
+  #waFloatBtn svg { width: 25px; height: 25px; }
+}
 
 @media (max-width: 640px) {
   .form-row { grid-template-columns: 1fr; }
