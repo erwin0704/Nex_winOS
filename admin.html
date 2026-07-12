@@ -109,7 +109,6 @@
   <script>
     const STATE = { produkList: [], selectedProduk: null, modulList: [], selectedModul: null, kontenList: [] };
 
-    /* ---------------- TAB NAVIGASI ---------------- */
     const TABS = [
       { key: 'statistik', label: 'Statistik', icon: 'chart' },
       { key: 'produk', label: 'Produk & Konten', icon: 'box' },
@@ -119,23 +118,28 @@
       { key: 'update', label: 'Update', icon: 'bell' }
     ];
 
+    /** Nama produk berdasarkan id — dipakai agar tabel tidak lagi menampilkan ID mentah. */
+    const PRODUK_NAMA = {};
+    function namaProduk(id) { return PRODUK_NAMA[id] || id || '-'; }
+
     if (requireAdmin()) {
       try {
         mountSidebar('admin');
         initAdminTabs();
+        showLoading('Memuat statistik...');
         loadStatistik();
       } catch (err) {
         console.error('Admin init error:', err);
         document.getElementById('adminTabs').innerHTML =
-          '<div class="empty-state" style="grid-column:1/-1;border-color:#F0506E;">⚠️ Gagal memuat Admin Panel: ' + err.message +
-          '<br><small>Coba hard refresh (Ctrl+Shift+R). Kalau masih error, pastikan file assets/api.js di GitHub sudah versi terbaru.</small></div>';
+          '<div class="empty-state" style="grid-column:1/-1;border-color:#F0506E;">⚠️ Gagal memuat Admin Panel: ' + escapeHtml(err.message) +
+          '<br><small>Coba hard refresh (Ctrl+Shift+R). Pastikan file assets/api.js di GitHub sudah versi terbaru.</small></div>';
       }
     }
 
     function initAdminTabs() {
       document.getElementById('adminTabs').innerHTML = TABS.map(function (t, i) {
         return '<button class="admin-tab ' + (i === 0 ? 'active' : '') + '" data-tab="' + t.key + '" onclick="switchAdminTab(\'' + t.key + '\')">' +
-          (ICONS[t.icon] || '') + '<span>' + t.label + '</span></button>';
+          (ICONS[t.icon] || '') + '<span>' + escapeHtml(t.label) + '</span></button>';
       }).join('');
     }
 
@@ -156,26 +160,50 @@
       if (tab === 'update') loadUpdate();
     }
 
+    /** Ambil daftar produk sekali & isi cache nama produk. */
+    async function fetchProdukList() {
+      const res = await apiGet('adminGetAllProduk', {});
+      if (handleSessionExpired(res)) return [];
+      const list = (res.data || []);
+      list.forEach(function (p) { PRODUK_NAMA[p.id] = p.nama; });
+      return list;
+    }
+
+    function optionsHtml(list) {
+      if (list.length === 0) return '<option value="">— belum ada produk —</option>';
+      return list.map(function (p) {
+        return '<option value="' + escapeAttr(p.id) + '">' + escapeHtml(p.nama) + '</option>';
+      }).join('');
+    }
+
+    function formatTanggal(v) {
+      if (!v) return '-';
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return String(v);
+      return d.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
     /* ---------------- STATISTIK ---------------- */
     async function loadStatistik() {
       try {
         const res = await apiGet('adminGetStatistik', {});
         hideLoading();
+        if (handleSessionExpired(res)) return;
         if (!res.success) { showToast('Gagal memuat statistik: ' + res.message); return; }
         const s = res.data || {};
         document.getElementById('statGrid').innerHTML =
-          statCard(s.totalUser, 'Total User') +
-          statCard(s.userAktif, 'User Aktif') +
-          statCard(s.totalProduk, 'Total Produk') +
+          statCard(s.totalUser || 0, 'Total User') +
+          statCard(s.userAktif || 0, 'User Aktif') +
+          statCard(s.totalProduk || 0, 'Total Produk') +
           statCard((s.kodeTerpakai || 0) + ' / ' + (s.totalKodeAkses || 0), 'Kode Akses Terpakai') +
-          statCard(s.loginMingguIni, 'Login 7 Hari Terakhir');
+          statCard(s.loginMingguIni || 0, 'Login 7 Hari Terakhir');
       } catch (err) {
         hideLoading();
         showToast('Gagal terhubung ke server: ' + err.message);
       }
     }
     function statCard(num, label) {
-      return '<div class="stat-card"><div class="stat-num">' + num + '</div><div class="stat-label">' + label + '</div></div>';
+      return '<div class="stat-card"><div class="stat-num">' + escapeHtml(num) + '</div><div class="stat-label">' + escapeHtml(label) + '</div></div>';
     }
 
     /* ---------------- PRODUK, MODUL, KONTEN ---------------- */
@@ -183,9 +211,8 @@
       STATE.selectedProduk = null; STATE.selectedModul = null;
       document.getElementById('produkBreadcrumb').innerHTML = '';
       try {
-        const res = await apiGet('adminGetAllProduk', {});
+        STATE.produkList = await fetchProdukList();
         hideLoading();
-        STATE.produkList = res.data || [];
         renderProdukList();
       } catch (err) {
         hideLoading();
@@ -206,28 +233,29 @@
         html += '<tr class="empty-row"><td colspan="3">Belum ada produk.</td></tr>';
       } else {
         STATE.produkList.forEach(function (p) {
-          html += '<tr><td>' + p.nama + '</td><td>' + (p.kategori || '-') + '</td><td class="row-actions">' +
-            '<button class="btn btn-outline btn-sm" onclick="openModul(\'' + p.id + '\', \'' + escapeQ(p.nama) + '\')">Kelola Modul</button>' +
-            '<button class="btn btn-outline btn-sm" onclick="deleteProduk(\'' + p.id + '\')">Hapus</button></td></tr>';
+          // FIX: nama produk dulu di-escape hanya untuk kutip tunggal (escapeQ),
+          // sehingga nama berisi < > atau kutip ganda merusak baris tabel.
+          html += '<tr><td>' + escapeHtml(p.nama) + '</td><td>' + escapeHtml(p.kategori || '-') + '</td><td class="row-actions">' +
+            '<button class="btn btn-outline btn-sm" onclick="openModul(\'' + escapeJs(p.id) + '\', \'' + escapeJs(p.nama) + '\')">Kelola Modul</button>' +
+            '<button class="btn btn-outline btn-sm" onclick="deleteProduk(\'' + escapeJs(p.id) + '\')">Hapus</button></td></tr>';
         });
       }
       html += '</tbody></table></div>';
       document.getElementById('produkArea').innerHTML = html;
     }
 
-    function escapeQ(str) { return String(str).replace(/'/g, "\\'"); }
-
     async function createProduk() {
       const data = {
-        nama: document.getElementById('pNama').value,
-        kategori: document.getElementById('pKategori').value,
-        deskripsi: document.getElementById('pDeskripsi').value,
-        thumbnail: document.getElementById('pThumbnail').value
+        nama: document.getElementById('pNama').value.trim(),
+        kategori: document.getElementById('pKategori').value.trim(),
+        deskripsi: document.getElementById('pDeskripsi').value.trim(),
+        thumbnail: document.getElementById('pThumbnail').value.trim()
       };
       if (!data.nama) { showToast('Nama produk wajib diisi.'); return; }
       showLoading('Menyimpan produk...');
       try {
         const res = await apiPost('adminCreateProduk', { data: data });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Produk berhasil ditambahkan.');
         loadProdukList();
@@ -239,6 +267,7 @@
       showLoading('Menghapus produk...');
       try {
         const res = await apiPost('adminDeleteProduk', { produkId: id });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Produk dihapus.');
         loadProdukList();
@@ -247,30 +276,36 @@
 
     async function openModul(produkId, produkNama) {
       STATE.selectedProduk = { id: produkId, nama: produkNama };
-      document.getElementById('produkBreadcrumb').innerHTML = '<a onclick="loadProdukList()">Produk</a> / ' + produkNama;
+      STATE.selectedModul = null;
+      document.getElementById('produkBreadcrumb').innerHTML =
+        '<a onclick="loadProdukList()">Produk</a> / ' + escapeHtml(produkNama);
       showLoading('Memuat modul...');
       try {
         const res = await apiGet('adminGetModulByProduk', { produkId: produkId });
         hideLoading();
+        if (handleSessionExpired(res)) return;
         STATE.modulList = res.data || [];
         renderModulList();
       } catch (err) { hideLoading(); showToast('Gagal memuat modul: ' + err.message); }
     }
 
     function renderModulList() {
+      // FIX: urutan default sekarang = jumlah modul + 1, dulu selalu "1" sehingga
+      // modul baru saling bertabrakan urutannya.
+      const nextUrutan = STATE.modulList.length + 1;
       let html = '<div class="panel"><div class="panel-head"><h3>Tambah Modul</h3></div>' +
         '<div class="form-row"><div><label>Nama Modul</label><input id="mNama"></div>' +
-        '<div><label>Urutan</label><input type="number" id="mUrutan" value="1"></div></div>' +
+        '<div><label>Urutan</label><input type="number" id="mUrutan" min="1" value="' + nextUrutan + '"></div></div>' +
         '<button class="btn btn-primary btn-sm" onclick="createModul()">Tambah Modul</button></div>';
 
       html += '<div class="panel"><div class="panel-head"><h3>Daftar Modul</h3></div><table><thead><tr><th>Nama Modul</th><th>Urutan</th><th></th></tr></thead><tbody>';
       if (STATE.modulList.length === 0) {
         html += '<tr class="empty-row"><td colspan="3">Belum ada modul untuk produk ini.</td></tr>';
       } else {
-        STATE.modulList.forEach(function (m) {
-          html += '<tr><td>' + m.nama_modul + '</td><td>' + m.urutan + '</td><td class="row-actions">' +
-            '<button class="btn btn-outline btn-sm" onclick="openKonten(\'' + m.id + '\', \'' + escapeQ(m.nama_modul) + '\')">Kelola Konten</button>' +
-            '<button class="btn btn-outline btn-sm" onclick="deleteModul(\'' + m.id + '\')">Hapus</button></td></tr>';
+        STATE.modulList.slice().sort(function (a, b) { return (a.urutan || 0) - (b.urutan || 0); }).forEach(function (m) {
+          html += '<tr><td>' + escapeHtml(m.nama_modul) + '</td><td>' + escapeHtml(m.urutan) + '</td><td class="row-actions">' +
+            '<button class="btn btn-outline btn-sm" onclick="openKonten(\'' + escapeJs(m.id) + '\', \'' + escapeJs(m.nama_modul) + '\')">Kelola Konten</button>' +
+            '<button class="btn btn-outline btn-sm" onclick="deleteModul(\'' + escapeJs(m.id) + '\')">Hapus</button></td></tr>';
         });
       }
       html += '</tbody></table></div>';
@@ -278,15 +313,17 @@
     }
 
     async function createModul() {
+      if (!STATE.selectedProduk) { showToast('Pilih produk dulu.'); return; }
       const data = {
         produk_id: STATE.selectedProduk.id,
-        nama_modul: document.getElementById('mNama').value,
+        nama_modul: document.getElementById('mNama').value.trim(),
         urutan: parseInt(document.getElementById('mUrutan').value, 10) || 0
       };
       if (!data.nama_modul) { showToast('Nama modul wajib diisi.'); return; }
       showLoading('Menyimpan modul...');
       try {
         const res = await apiPost('adminCreateModul', { data: data });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Modul ditambahkan.');
         openModul(STATE.selectedProduk.id, STATE.selectedProduk.nama);
@@ -298,6 +335,7 @@
       showLoading('Menghapus modul...');
       try {
         const res = await apiPost('adminDeleteModul', { modulId: id });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Modul dihapus.');
         openModul(STATE.selectedProduk.id, STATE.selectedProduk.nama);
@@ -308,22 +346,25 @@
       STATE.selectedModul = { id: modulId, nama: modulNama };
       document.getElementById('produkBreadcrumb').innerHTML =
         '<a onclick="loadProdukList()">Produk</a> / ' +
-        '<a onclick="openModul(\'' + STATE.selectedProduk.id + '\', \'' + escapeQ(STATE.selectedProduk.nama) + '\')">' + STATE.selectedProduk.nama + '</a> / ' + modulNama;
+        '<a onclick="openModul(\'' + escapeJs(STATE.selectedProduk.id) + '\', \'' + escapeJs(STATE.selectedProduk.nama) + '\')">' +
+        escapeHtml(STATE.selectedProduk.nama) + '</a> / ' + escapeHtml(modulNama);
       showLoading('Memuat konten...');
       try {
         const res = await apiGet('adminGetKontenByModul', { modulId: modulId });
         hideLoading();
+        if (handleSessionExpired(res)) return;
         STATE.kontenList = res.data || [];
         renderKontenList();
       } catch (err) { hideLoading(); showToast('Gagal memuat konten: ' + err.message); }
     }
 
     function renderKontenList() {
+      const nextUrutan = STATE.kontenList.length + 1;
       let html = '<div class="panel"><div class="panel-head"><h3>Tambah Konten</h3></div>' +
         '<div class="form-row"><div><label>Tipe</label><select id="kTipe">' +
         '<option value="video">Video</option><option value="pdf">PDF / Dokumen</option>' +
         '<option value="prompt">Prompt</option><option value="template">Template</option></select></div>' +
-        '<div><label>Urutan</label><input type="number" id="kUrutan" value="1"></div></div>' +
+        '<div><label>Urutan</label><input type="number" id="kUrutan" min="1" value="' + nextUrutan + '"></div></div>' +
         '<div class="form-row single"><div><label>Judul</label><input id="kJudul"></div></div>' +
         '<div class="form-row single"><div><label>URL (link Google Drive / video)</label><input id="kUrl" placeholder="https://drive.google.com/..."></div></div>' +
         '<button class="btn btn-primary btn-sm" onclick="createKonten()">Tambah Konten</button></div>';
@@ -332,9 +373,9 @@
       if (STATE.kontenList.length === 0) {
         html += '<tr class="empty-row"><td colspan="3">Belum ada konten di modul ini.</td></tr>';
       } else {
-        STATE.kontenList.forEach(function (k) {
-          html += '<tr><td><span class="chip">' + k.tipe + '</span></td><td>' + k.judul + '</td><td class="row-actions">' +
-            '<button class="btn btn-outline btn-sm" onclick="deleteKonten(\'' + k.id + '\')">Hapus</button></td></tr>';
+        STATE.kontenList.slice().sort(function (a, b) { return (a.urutan || 0) - (b.urutan || 0); }).forEach(function (k) {
+          html += '<tr><td><span class="chip">' + escapeHtml(k.tipe) + '</span></td><td>' + escapeHtml(k.judul) + '</td><td class="row-actions">' +
+            '<button class="btn btn-outline btn-sm" onclick="deleteKonten(\'' + escapeJs(k.id) + '\')">Hapus</button></td></tr>';
         });
       }
       html += '</tbody></table></div>';
@@ -342,17 +383,19 @@
     }
 
     async function createKonten() {
+      if (!STATE.selectedModul) { showToast('Pilih modul dulu.'); return; }
       const data = {
         modul_id: STATE.selectedModul.id,
         tipe: document.getElementById('kTipe').value,
-        judul: document.getElementById('kJudul').value,
-        url: document.getElementById('kUrl').value,
+        judul: document.getElementById('kJudul').value.trim(),
+        url: document.getElementById('kUrl').value.trim(),
         urutan: parseInt(document.getElementById('kUrutan').value, 10) || 0
       };
       if (!data.judul || !data.url) { showToast('Judul dan URL wajib diisi.'); return; }
       showLoading('Menyimpan konten...');
       try {
         const res = await apiPost('adminCreateKonten', { data: data });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Konten ditambahkan.');
         openKonten(STATE.selectedModul.id, STATE.selectedModul.nama);
@@ -364,6 +407,7 @@
       showLoading('Menghapus konten...');
       try {
         const res = await apiPost('adminDeleteKonten', { kontenId: id });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Konten dihapus.');
         openKonten(STATE.selectedModul.id, STATE.selectedModul.nama);
@@ -373,21 +417,25 @@
     /* ---------------- PROMPT LIBRARY ---------------- */
     async function loadPromptLibrary() {
       try {
-        const resProduk = await apiGet('adminGetAllProduk', {});
-        const sel = document.getElementById('promptProduk');
-        sel.innerHTML = (resProduk.data || []).map(function (p) { return '<option value="' + p.id + '">' + p.nama + '</option>'; }).join('');
+        const produkList = await fetchProdukList();
+        document.getElementById('promptProduk').innerHTML = optionsHtml(produkList);
 
         const res = await apiGet('adminGetAllPrompt', {});
         hideLoading();
+        if (handleSessionExpired(res)) return;
         const list = res.data || [];
         const tbody = document.getElementById('promptTable');
         if (list.length === 0) {
           tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Belum ada prompt.</td></tr>';
           return;
         }
+        // FIX: kolom "Produk" dulu menampilkan produk_id mentah (PRD_a1b2c3),
+        // sekarang dipetakan ke nama produk.
         tbody.innerHTML = list.map(function (p) {
-          return '<tr><td>' + p.judul + '</td><td><span class="chip">' + (p.kategori || 'Umum') + '</span></td><td>' + (p.produk_id || '-') + '</td>' +
-            '<td><button class="btn btn-outline btn-sm" onclick="deletePrompt(\'' + p.id + '\')">Hapus</button></td></tr>';
+          return '<tr><td>' + escapeHtml(p.judul) + '</td>' +
+            '<td><span class="chip">' + escapeHtml(p.kategori || 'Umum') + '</span></td>' +
+            '<td>' + escapeHtml(namaProduk(p.produk_id)) + '</td>' +
+            '<td><button class="btn btn-outline btn-sm" onclick="deletePrompt(\'' + escapeJs(p.id) + '\')">Hapus</button></td></tr>';
         }).join('');
       } catch (err) { hideLoading(); showToast('Gagal memuat prompt: ' + err.message); }
     }
@@ -395,15 +443,16 @@
     async function createPrompt() {
       const data = {
         produk_id: document.getElementById('promptProduk').value,
-        kategori: document.getElementById('promptKategori').value,
-        judul: document.getElementById('promptJudul').value,
-        isi_prompt: document.getElementById('promptIsi').value
+        kategori: document.getElementById('promptKategori').value.trim(),
+        judul: document.getElementById('promptJudul').value.trim(),
+        isi_prompt: document.getElementById('promptIsi').value.trim()
       };
       if (!data.produk_id) { showToast('Buat produk terlebih dahulu.'); return; }
       if (!data.judul || !data.isi_prompt) { showToast('Judul dan isi prompt wajib diisi.'); return; }
       showLoading('Menyimpan prompt...');
       try {
         const res = await apiPost('adminCreatePrompt', { data: data });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Prompt berhasil ditambahkan.');
         document.getElementById('promptJudul').value = '';
@@ -418,6 +467,7 @@
       showLoading('Menghapus prompt...');
       try {
         const res = await apiPost('adminDeletePrompt', { promptId: id });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Prompt dihapus.');
         loadPromptLibrary();
@@ -427,12 +477,12 @@
     /* ---------------- KODE AKSES ---------------- */
     async function loadKodeAkses() {
       try {
-        const resProduk = await apiGet('adminGetAllProduk', {});
-        const sel = document.getElementById('genKodeProduk');
-        sel.innerHTML = (resProduk.data || []).map(function (p) { return '<option value="' + p.id + '">' + p.nama + '</option>'; }).join('');
+        const produkList = await fetchProdukList();
+        document.getElementById('genKodeProduk').innerHTML = optionsHtml(produkList);
 
         const res = await apiGet('adminGetAllKodeAkses', {});
         hideLoading();
+        if (handleSessionExpired(res)) return;
         const list = res.data || [];
         const tbody = document.getElementById('kodeAksesTable');
         if (list.length === 0) {
@@ -440,9 +490,17 @@
           return;
         }
         tbody.innerHTML = list.map(function (k) {
-          const status = k.status_pakai === 'terpakai' ? '<span class="badge nonaktif">Terpakai</span>' : '<span class="badge aktif">Tersedia</span>';
-          return '<tr><td class="code-mono">' + k.kode + '</td><td>' + (k.produk_id || '-') + '</td><td>' + status + '</td><td>' + (k.dipakai_oleh || '-') + '</td>' +
-            '<td><button class="btn btn-outline btn-sm" onclick="deleteKode(\'' + k.kode + '\')">Hapus</button></td></tr>';
+          // FIX: status_pakai bisa berupa boolean TRUE dari Google Sheets, bukan
+          // hanya string 'terpakai' — dulu kode terpakai bisa tampil "Tersedia".
+          const terpakai = k.status_pakai === true || k.status_pakai === 'TRUE' || k.status_pakai === 'terpakai';
+          const status = terpakai
+            ? '<span class="badge nonaktif">Terpakai</span>'
+            : '<span class="badge aktif">Tersedia</span>';
+          return '<tr><td class="code-mono">' + escapeHtml(k.kode) + '</td>' +
+            '<td>' + escapeHtml(namaProduk(k.produk_id)) + '</td>' +
+            '<td>' + status + '</td>' +
+            '<td>' + escapeHtml(k.dipakai_oleh || '-') + '</td>' +
+            '<td><button class="btn btn-outline btn-sm" onclick="deleteKode(\'' + escapeJs(k.kode) + '\')">Hapus</button></td></tr>';
         }).join('');
       } catch (err) { hideLoading(); showToast('Gagal memuat kode akses: ' + err.message); }
     }
@@ -454,8 +512,12 @@
       showLoading('Membuat kode akses...');
       try {
         const res = await apiPost('adminGenerateKodeAkses', { produkId: produkId, jumlah: jumlah });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
-        showToast(res.kodeList.length + ' kode berhasil dibuat.');
+        // FIX: dulu langsung `res.kodeList.length` — kalau server tidak mengirim
+        // kodeList, muncul TypeError alih-alih pesan yang berguna.
+        const jml = (res.kodeList && res.kodeList.length) || jumlah;
+        showToast(jml + ' kode berhasil dibuat.');
         loadKodeAkses();
       } catch (err) { showToast('Gagal: ' + err.message); }
     }
@@ -465,6 +527,7 @@
       showLoading('Menghapus kode...');
       try {
         const res = await apiPost('adminDeleteKodeAkses', { kode: kode });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Kode dihapus.');
         loadKodeAkses();
@@ -476,21 +539,31 @@
       try {
         const res = await apiGet('adminGetAllUsers', {});
         hideLoading();
+        if (handleSessionExpired(res)) return;
         const list = res.data || [];
         const tbody = document.getElementById('usersTable');
         if (list.length === 0) {
           tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Belum ada user.</td></tr>';
           return;
         }
+        const me = getSession() || {};
         tbody.innerHTML = list.map(function (u) {
           const statusBadge = u.status === 'aktif' ? '<span class="badge aktif">Aktif</span>' : '<span class="badge nonaktif">Nonaktif</span>';
           const roleBadge = u.role === 'admin' ? '<span class="badge admin">Admin</span>' : 'Member';
           const toggleLabel = u.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan';
           const toggleStatus = u.status === 'aktif' ? 'nonaktif' : 'aktif';
-          return '<tr><td>' + u.nama + '</td><td>' + u.email + '</td><td>' + roleBadge + '</td><td>' + statusBadge + '</td><td>' + (u.terakhir_login || '-') + '</td>' +
-            '<td class="row-actions">' +
-            '<button class="btn btn-outline btn-sm" onclick="toggleUserStatus(\'' + u.id + '\', \'' + toggleStatus + '\')">' + toggleLabel + '</button>' +
-            '<button class="btn btn-outline btn-sm" onclick="deleteUser(\'' + u.id + '\')">Hapus</button></td></tr>';
+
+          // FIX: admin dulu bisa menonaktifkan / menghapus akunnya sendiri
+          // dan langsung terkunci keluar dari panel.
+          const isSelf = String(u.email).toLowerCase() === String(me.email || '').toLowerCase();
+          const aksi = isSelf
+            ? '<span style="font-size:12px;color:var(--ink-soft);">Akun kamu</span>'
+            : '<button class="btn btn-outline btn-sm" onclick="toggleUserStatus(\'' + escapeJs(u.id) + '\', \'' + toggleStatus + '\')">' + toggleLabel + '</button>' +
+              '<button class="btn btn-outline btn-sm" onclick="deleteUser(\'' + escapeJs(u.id) + '\')">Hapus</button>';
+
+          return '<tr><td>' + escapeHtml(u.nama) + '</td><td>' + escapeHtml(u.email) + '</td><td>' + roleBadge + '</td>' +
+            '<td>' + statusBadge + '</td><td>' + escapeHtml(formatTanggal(u.terakhir_login)) + '</td>' +
+            '<td class="row-actions">' + aksi + '</td></tr>';
         }).join('');
       } catch (err) { hideLoading(); showToast('Gagal memuat user: ' + err.message); }
     }
@@ -499,6 +572,7 @@
       showLoading('Memperbarui status user...');
       try {
         const res = await apiPost('adminSetUserStatus', { userId: userId, status: newStatus });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Status user diperbarui.');
         loadUsers();
@@ -510,6 +584,7 @@
       showLoading('Menghapus user...');
       try {
         const res = await apiPost('adminDeleteUser', { userId: userId });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('User dihapus.');
         loadUsers();
@@ -521,6 +596,7 @@
       try {
         const res = await apiGet('adminGetAllUpdate', {});
         hideLoading();
+        if (handleSessionExpired(res)) return;
         const list = res.data || [];
         const tbody = document.getElementById('updateTable');
         if (list.length === 0) {
@@ -528,18 +604,22 @@
           return;
         }
         tbody.innerHTML = list.map(function (u) {
-          return '<tr><td>' + u.judul + '</td><td>' + u.tanggal + '</td>' +
-            '<td><button class="btn btn-outline btn-sm" onclick="deleteUpdate(\'' + u.id + '\')">Hapus</button></td></tr>';
+          return '<tr><td>' + escapeHtml(u.judul) + '</td><td>' + escapeHtml(formatTanggal(u.tanggal)) + '</td>' +
+            '<td><button class="btn btn-outline btn-sm" onclick="deleteUpdate(\'' + escapeJs(u.id) + '\')">Hapus</button></td></tr>';
         }).join('');
       } catch (err) { hideLoading(); showToast('Gagal memuat update: ' + err.message); }
     }
 
     async function createUpdate() {
-      const data = { judul: document.getElementById('updateJudul').value, isi: document.getElementById('updateIsi').value };
+      const data = {
+        judul: document.getElementById('updateJudul').value.trim(),
+        isi: document.getElementById('updateIsi').value.trim()
+      };
       if (!data.judul || !data.isi) { showToast('Judul dan isi wajib diisi.'); return; }
       showLoading('Mempublikasikan update...');
       try {
         const res = await apiPost('adminCreateUpdate', { data: data });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Update dipublikasikan.');
         document.getElementById('updateJudul').value = '';
@@ -553,6 +633,7 @@
       showLoading('Menghapus update...');
       try {
         const res = await apiPost('adminDeleteUpdate', { updateId: id });
+        if (handleSessionExpired(res)) return;
         if (!res.success) throw new Error(res.message);
         showToast('Update dihapus.');
         loadUpdate();
